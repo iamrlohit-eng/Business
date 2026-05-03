@@ -1,0 +1,3054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaunchPad AI — Startup Operating System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   RESET & VARIABLES
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #FAFAF7;
+  --bg-surface:  #F4F1EB;
+  --bg-card:     #FFFFFF;
+  --bg-card2:    #FFFDF9;
+  --accent:      #FF6B35;
+  --accent-2:    #E8A838;
+  --accent-3:    #2D9CDB;
+  --accent-light: rgba(255,107,53,0.08);
+  --accent-glow:  rgba(255,107,53,0.18);
+  --text:        #1C1917;
+  --text-2:      #44403C;
+  --muted:       #78716C;
+  --muted-2:     #A8A29E;
+  --border:      rgba(0,0,0,0.07);
+  --border-em:   rgba(255,107,53,0.25);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-xl:   0 24px 64px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+  --radius-sm:   8px;
+  --radius-md:   14px;
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+  --radius-full: 999px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ═══════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════ */
+#cursor-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%,-50%);
+  transition: width 0.2s, height 0.2s, background 0.2s;
+}
+#cursor-ring {
+  width: 32px; height: 32px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 99998;
+  transform: translate(-50%,-50%);
+  opacity: 0.5;
+  transition: width 0.2s, height 0.2s, opacity 0.2s;
+}
+body:has(button:hover) #cursor-dot,
+body:has(a:hover) #cursor-dot { width: 4px; height: 4px; }
+body:has(button:hover) #cursor-ring,
+body:has(a:hover) #cursor-ring { width: 52px; height: 52px; opacity: 0.2; }
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+#navbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 200;
+  padding: 0 48px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all 400ms ease;
+}
+#navbar.scrolled {
+  background: rgba(250,250,247,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  text-decoration: none;
+}
+.nav-logo span { color: var(--accent); }
+.nav-pills {
+  display: flex;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  gap: 2px;
+  backdrop-filter: blur(8px);
+}
+.nav-pill {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 200ms ease;
+  white-space: nowrap;
+}
+.nav-pill.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.nav-pill.completed { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-btn-ghost {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 200ms ease;
+}
+.nav-btn-ghost:hover { border-color: var(--border-em); color: var(--accent); }
+.nav-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════
+   HERO SECTION
+═══════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.hero-photo-bg {
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&q=80');
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.05);
+  transition: transform 8s ease;
+}
+.hero-photo-bg.loaded { transform: scale(1); }
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(250,250,247,0.97) 0%,
+    rgba(250,250,247,0.92) 40%,
+    rgba(250,250,247,0.7) 70%,
+    rgba(244,241,235,0.5) 100%
+  );
+}
+.hero-content {
+  position: relative; z-index: 2;
+  text-align: center;
+  max-width: 820px;
+  padding: 0 24px;
+  padding-top: 64px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 8px 18px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 36px;
+  opacity: 0;
+  animation: fadeUp 600ms 300ms ease forwards;
+}
+.hero-badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255,107,53,0); }
+}
+.hero-headline {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(52px, 7vw, 88px);
+  line-height: 1.05;
+  letter-spacing: -2px;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+.hero-headline .line2 {
+  color: var(--accent);
+  display: block;
+}
+.hero-word {
+  display: inline-block;
+  clip-path: inset(0 100% 0 0);
+  opacity: 0;
+}
+.hero-word.revealed {
+  animation: wordReveal 600ms cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes wordReveal {
+  from { clip-path: inset(0 100% 0 0); opacity: 1; }
+  to { clip-path: inset(0 0% 0 0); opacity: 1; }
+}
+.hero-sub {
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--muted);
+  max-width: 460px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+  opacity: 0;
+  animation: fadeUp 600ms 1000ms ease forwards;
+}
+.hero-cta-row {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeUp 600ms 1300ms ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 15px 30px;
+  border-radius: var(--radius-md);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transition: all 200ms cubic-bezier(0.34,1.56,0.64,1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  transform: translateX(-100%) skewX(-20deg);
+  transition: transform 0s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--accent-glow); }
+.btn-primary:hover::after { transform: translateX(200%) skewX(-20deg); transition: transform 600ms ease; }
+.btn-primary:active { transform: scale(0.97); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: white;
+  color: var(--text-2);
+  padding: 15px 30px;
+  border-radius: var(--radius-md);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 200ms cubic-bezier(0.34,1.56,0.64,1);
+  text-decoration: none;
+}
+.btn-ghost:hover { border-color: var(--border-em); color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.hero-scroll {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted-2);
+  animation: fadeUp 600ms 1600ms ease both;
+}
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  animation: scrollPulse 2s infinite;
+}
+@keyframes scrollPulse {
+  0%,100% { opacity: 0.3; transform: scaleY(0.5); transform-origin: top; }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* ═══════════════════════════════════════
+   SOCIAL PROOF STRIP
+═══════════════════════════════════════ */
+.proof-strip {
+  background: white;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 48px;
+  display: flex; align-items: center; justify-content: center; gap: 48px;
+  flex-wrap: wrap;
+}
+.proof-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--muted);
+}
+.proof-num {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text);
+}
+.proof-divider { width: 1px; height: 24px; background: var(--border); }
+
+/* ═══════════════════════════════════════
+   STAGE PANELS WRAPPER
+═══════════════════════════════════════ */
+#stages-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+.stage-panel { display: none; padding: 64px 0; }
+.stage-panel.active { display: block; animation: stageIn 500ms cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes stageIn {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stage-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 48px;
+}
+.stage-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 3px;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.stage-num::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+.stage-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.stage-title span { color: var(--accent); }
+.stage-desc {
+  font-size: 15px; font-weight: 300; color: var(--muted);
+  max-width: 380px; line-height: 1.75;
+  margin-top: 12px;
+}
+
+/* Photo decorations for stages */
+.stage-photo {
+  width: 220px; height: 160px;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  box-shadow: var(--shadow-xl);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════ */
+#progress-bar-wrap {
+  position: sticky; top: 64px; z-index: 100;
+  background: rgba(250,250,247,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+}
+.progress-track {
+  display: flex; gap: 4px; padding: 12px 0;
+}
+.progress-seg {
+  flex: 1; height: 3px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden; cursor: pointer;
+}
+.progress-seg-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  width: 0%;
+  transition: width 600ms cubic-bezier(0.16,1,0.3,1);
+}
+.progress-seg.completed .progress-seg-fill { width: 100%; }
+.progress-seg.active .progress-seg-fill {
+  width: 60%;
+  animation: progressPulse 2s infinite;
+}
+@keyframes progressPulse {
+  0%,100% { width: 60%; }
+  50% { width: 75%; }
+}
+
+/* ═══════════════════════════════════════
+   CARDS & GRID
+═══════════════════════════════════════ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: all 300ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.card:hover {
+  border-color: var(--border-em);
+  box-shadow: var(--shadow-md), 0 0 0 4px var(--accent-light);
+  transform: translateY(-3px);
+}
+.card.selected {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(255,107,53,0.04) 0%, white 100%);
+  box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-light);
+}
+
+/* ═══════════════════════════════════════
+   STAGE 1 — IDEA LAB
+═══════════════════════════════════════ */
+.domain-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 16px 0 28px;
+}
+.domain-pill {
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-2);
+  background: white;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: var(--shadow-sm);
+}
+.domain-pill:hover { border-color: var(--border-em); color: var(--accent); transform: translateY(-1px); }
+.domain-pill.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.idea-textarea {
+  width: 100%;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 300;
+  color: var(--text);
+  min-height: 130px;
+  resize: vertical;
+  transition: all 200ms ease;
+  box-shadow: var(--shadow-sm);
+}
+.idea-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-light), var(--shadow-sm);
+}
+.input-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+.char-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted-2);
+  text-align: right; margin-top: 6px;
+}
+.ideas-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 16px; margin-top: 40px;
+}
+.idea-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: var(--shadow-sm);
+  opacity: 0; transform: translateY(20px);
+}
+.idea-card.visible { animation: cardIn 400ms cubic-bezier(0.34,1.56,0.64,1) forwards; }
+@keyframes cardIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.idea-card:hover {
+  border-color: var(--border-em);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+.idea-card.selected {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-light);
+  background: linear-gradient(135deg, rgba(255,107,53,0.03) 0%, white 100%);
+}
+.idea-photo {
+  width: 100%; height: 110px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+.idea-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.idea-emoji { font-size: 22px; }
+.idea-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--accent); font-weight: 500;
+}
+.idea-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+}
+.idea-problem { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+.idea-footer { display: flex; justify-content: space-between; align-items: center; }
+.idea-market {
+  background: rgba(232,168,56,0.12);
+  color: var(--accent-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+.idea-select {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  transition: transform 200ms ease;
+}
+.idea-card:hover .idea-select { transform: translateX(4px); }
+
+/* Idea Lab layout */
+.idea-layout {
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; align-items: start;
+}
+.section-photo-wrap {
+  position: relative; border-radius: var(--radius-xl); overflow: hidden;
+  height: 260px; margin-bottom: 28px;
+}
+.section-photo-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.section-photo-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(28,25,23,0.8), transparent);
+  padding: 20px 18px 16px;
+  font-size: 12px; color: rgba(255,255,255,0.8);
+  font-weight: 300;
+}
+
+/* ═══════════════════════════════════════
+   SAMPLE REFERENCE BANNER
+═══════════════════════════════════════ */
+.sample-banner {
+  background: linear-gradient(135deg, rgba(255,107,53,0.04) 0%, rgba(232,168,56,0.06) 100%);
+  border: 1px solid var(--border-em);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 28px;
+}
+.sample-banner-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.sample-stats-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.sample-stat {
+  flex-shrink: 0;
+}
+.sample-stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.sample-stat-lbl {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+.sample-stat-div {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  flex-shrink: 0;
+  align-self: center;
+}
+.sample-stat-wide {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ═══════════════════════════════════════
+   DOMAIN TOPIC CARDS (Stage 1)
+═══════════════════════════════════════ */
+.domain-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.domain-topic-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  background: white;
+  box-shadow: var(--shadow-sm);
+  transition: all 300ms cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+.domain-topic-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg), 0 0 0 3px var(--accent-light);
+  transform: translateY(-5px);
+}
+.domain-topic-card.loading {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+  pointer-events: none;
+}
+.domain-topic-card.loading::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,107,53,0.06);
+  border-radius: var(--radius-lg);
+  animation: cardLoadPulse 1s infinite;
+}
+@keyframes cardLoadPulse {
+  0%,100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.domain-topic-img-wrap {
+  position: relative; width: 100%; height: 130px; overflow: hidden;
+}
+.domain-topic-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 500ms ease;
+}
+.domain-topic-card:hover .domain-topic-img-wrap img { transform: scale(1.07); }
+.domain-topic-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(28,25,23,0.55) 0%, transparent 60%);
+}
+.domain-topic-body {
+  padding: 14px 16px 16px;
+}
+.domain-topic-icon { font-size: 22px; margin-bottom: 6px; }
+.domain-topic-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 700; color: var(--text);
+  margin-bottom: 4px;
+}
+.domain-topic-sub {
+  font-size: 11px; color: var(--muted); font-weight: 300;
+  line-height: 1.5; margin-bottom: 12px;
+}
+.domain-topic-arrow {
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  letter-spacing: 0.5px;
+  opacity: 0; transform: translateX(-6px);
+  transition: all 200ms ease;
+}
+.domain-topic-card:hover .domain-topic-arrow {
+  opacity: 1; transform: translateX(0);
+}
+
+/* 2×2 ideas grid */
+.ideas-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.ideas-grid-2x2 .idea-card {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+}
+.ideas-grid-2x2 .idea-photo { height: 140px; }
+.ideas-grid-2x2 .idea-problem { font-size: 13px; }
+
+@media (max-width: 900px) {
+  .domain-topic-grid { grid-template-columns: repeat(2,1fr); }
+  .ideas-grid-2x2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .domain-topic-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ═══════════════════════════════════════
+   STAGE 2 — VALIDATION
+═══════════════════════════════════════ */
+.validation-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 20px;
+}
+.val-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.val-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.val-header::before { content: ''; width: 16px; height: 1px; background: var(--accent); }
+.score-big {
+  font-family: 'Playfair Display', serif;
+  font-size: 64px; font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+.score-denom { font-size: 24px; font-weight: 400; color: var(--muted-2); }
+.score-bar-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px; font-size: 12px; color: var(--text-2);
+}
+.score-bar-wrap {
+  flex: 1; height: 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full); overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: var(--radius-full);
+  width: 0%;
+  transition: width 1000ms cubic-bezier(0.16,1,0.3,1);
+}
+.score-bar-label { width: 110px; font-weight: 500; }
+.score-bar-num {
+  width: 30px; text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+.verdict-box {
+  margin-top: 20px; padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 700;
+  text-align: center; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.verdict-green { background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.2); }
+.verdict-caution { background: rgba(232,168,56,0.1); color: #b45309; border: 1px solid rgba(232,168,56,0.2); }
+
+/* ═══════════════════════════════════════
+   STAGE 3 — BRAND FORGE
+═══════════════════════════════════════ */
+.brand-layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+}
+.brand-display {
+  background: var(--text);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 400px;
+  position: relative; overflow: hidden;
+}
+.brand-display-photo {
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80');
+  background-size: cover; background-position: center;
+  opacity: 0.2;
+}
+.brand-display-name {
+  position: relative; z-index: 1;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 4vw, 60px);
+  font-weight: 900;
+  color: white;
+  line-height: 1.1;
+}
+.brand-display-tagline {
+  position: relative; z-index: 1;
+  font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.6);
+  margin-top: 12px;
+}
+.brand-palette {
+  position: relative; z-index: 1;
+  display: flex; gap: 8px; margin-top: 32px;
+}
+.swatch {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.swatch:hover { transform: scale(1.2); }
+.name-options { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+.name-card {
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: all 200ms ease;
+  box-shadow: var(--shadow-sm);
+}
+.name-card:hover { border-color: var(--border-em); transform: translateY(-2px); }
+.name-card.active { border-color: var(--accent); background: var(--accent-light); }
+.name-card-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+.name-card-tld { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.persona-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex; gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.persona-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.persona-name { font-weight: 700; font-size: 14px; color: var(--text); }
+.persona-role { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.persona-point {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  font-size: 12px; font-weight: 300; color: var(--text-2);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.persona-point.goal { border-color: var(--accent-2); }
+
+/* ═══════════════════════════════════════
+   STAGE 4 — COPY ENGINE
+═══════════════════════════════════════ */
+.copy-wrapper {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  min-height: 600px;
+}
+.copy-left { flex: 1; border-right: 1px solid var(--border); }
+.copy-right { flex: 1; background: var(--bg-surface); }
+.copy-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.copy-accordion { overflow-y: auto; max-height: 540px; }
+.acc-item { border-bottom: 1px solid var(--border); }
+.acc-head {
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  transition: background 150ms ease;
+}
+.acc-head:hover { background: var(--bg); }
+.acc-head .acc-icon { font-size: 10px; color: var(--muted); transition: transform 200ms ease; }
+.acc-item.open .acc-icon { transform: rotate(90deg); }
+.acc-body {
+  display: none; padding: 0 20px 20px;
+}
+.acc-item.open .acc-body { display: block; }
+.copy-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.7;
+  position: relative;
+}
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 10px; font-weight: 500; color: var(--muted);
+  cursor: pointer; transition: all 150ms ease;
+}
+.copy-btn:hover { border-color: var(--border-em); color: var(--accent); }
+.preview-site {
+  padding: 24px;
+  overflow-y: auto; max-height: 540px;
+}
+.preview-hero {
+  background: var(--text);
+  border-radius: var(--radius-md);
+  padding: 32px 24px;
+  text-align: center; margin-bottom: 16px;
+}
+.preview-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 900; color: white;
+  margin-bottom: 8px;
+}
+.preview-hero p { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 16px; }
+.preview-btn {
+  display: inline-block;
+  background: var(--accent); color: white;
+  padding: 8px 20px; border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+}
+.preview-feature-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.preview-feature {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+  font-size: 11px; color: var(--text-2); text-align: center;
+}
+.preview-feature-icon { font-size: 20px; margin-bottom: 6px; }
+.preview-feature-name { font-weight: 600; margin-bottom: 4px; }
+
+/* ═══════════════════════════════════════
+   STAGE 5 — MARKETING WAR ROOM
+═══════════════════════════════════════ */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(6,1fr);
+  gap: 12px; margin-bottom: 28px;
+}
+.kpi-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; font-weight: 700; color: var(--text);
+  line-height: 1;
+}
+.kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase;
+  margin-top: 4px;
+}
+.marketing-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+.mkt-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.mkt-card-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.budget-slider-row { margin-bottom: 14px; }
+.budget-slider-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-2);
+  margin-bottom: 6px;
+}
+.budget-slider {
+  width: 100%; height: 4px;
+  appearance: none; background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  outline: none; cursor: pointer;
+}
+.budget-slider::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--accent);
+  box-shadow: 0 2px 6px var(--accent-glow);
+  cursor: pointer;
+}
+.channel-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.channel-name { width: 110px; font-size: 12px; color: var(--text-2); font-weight: 500; }
+.channel-bar-bg { flex: 1; height: 8px; background: var(--bg-surface); border-radius: var(--radius-full); overflow: hidden; }
+.channel-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: var(--radius-full);
+  width: 0%; transition: width 1000ms cubic-bezier(0.16,1,0.3,1);
+}
+.channel-roi { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
+
+/* ═══════════════════════════════════════
+   STAGE 6 — LAUNCH COMMAND
+═══════════════════════════════════════ */
+.launch-layout { display: grid; grid-template-columns: auto 1fr 1fr; gap: 36px; align-items: start; }
+.readiness-circle-wrap { display: flex; flex-direction: column; align-items: center; }
+.readiness-svg { width: 160px; height: 160px; }
+.readiness-score-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 40px; font-weight: 900; color: var(--accent);
+  text-anchor: middle; dominant-baseline: middle;
+}
+.readiness-label-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; fill: var(--muted);
+  text-anchor: middle; dominant-baseline: middle;
+}
+.checklist { }
+.checklist-progress {
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  height: 6px; overflow: hidden;
+  margin-bottom: 20px;
+}
+.checklist-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: var(--radius-full);
+  width: 0%; transition: width 400ms ease;
+}
+.checklist-count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.check-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.check-box {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 200ms ease;
+  font-size: 11px;
+}
+.check-item.done .check-box {
+  background: var(--accent); border-color: var(--accent);
+  color: white;
+}
+.check-item.done .check-text { text-decoration: line-through; color: var(--muted); }
+.check-text { font-size: 13px; color: var(--text-2); font-weight: 400; flex: 1; }
+.check-priority {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.priority-high { background: #ef4444; }
+.priority-med { background: var(--accent-2); }
+.priority-low { background: #22c55e; }
+.pitch-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+}
+.pitch-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pitch-row:last-child { border-bottom: none; }
+.pitch-row-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+}
+.pitch-row-value { font-size: 13px; font-weight: 400; color: var(--text); line-height: 1.5; }
+.launch-actions {
+  display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════
+   JARVIS OVERLAY
+═══════════════════════════════════════ */
+#jarvis-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(250,250,247,0.97);
+  backdrop-filter: blur(12px);
+  z-index: 500;
+  align-items: center; justify-content: center;
+}
+#jarvis-overlay.show { display: flex; animation: overlayIn 300ms ease; }
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.jarvis-content {
+  max-width: 480px; width: 100%; padding: 48px 0;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.jarvis-sonar {
+  position: relative; width: 72px; height: 72px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 32px;
+}
+.sonar-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%; background: var(--accent);
+  position: relative; z-index: 3;
+}
+.sonar-ring {
+  position: absolute; border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  animation: sonarPulse 2s infinite;
+}
+.sonar-ring:nth-child(2) { width: 32px; height: 32px; opacity: 0.5; animation-delay: 0s; }
+.sonar-ring:nth-child(3) { width: 56px; height: 56px; opacity: 0.3; animation-delay: 0.4s; }
+.sonar-ring:nth-child(4) { width: 72px; height: 72px; opacity: 0.15; animation-delay: 0.8s; }
+@keyframes sonarPulse {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.jarvis-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.jarvis-msg-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 700;
+  color: var(--text); line-height: 1.2;
+  margin-bottom: 8px;
+}
+.jarvis-msg-sub {
+  font-size: 32px; font-weight: 300;
+  color: var(--muted);
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 36px;
+}
+.jarvis-steps { width: 100%; text-align: left; margin-bottom: 32px; }
+.jarvis-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  opacity: 0.25; transition: all 300ms ease;
+}
+.jarvis-step.active {
+  opacity: 1;
+  background: var(--accent-light);
+  border-left: 2px solid var(--accent);
+}
+.jarvis-step.done { opacity: 0.5; }
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--accent); width: 24px;
+}
+.step-text { font-size: 13px; font-weight: 400; color: var(--text); flex: 1; }
+.step-icon { font-size: 14px; }
+.jarvis-progress-wrap { width: 100%; }
+.jarvis-progress-labels {
+  display: flex; justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.jarvis-progress-track {
+  width: 100%; height: 3px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full); overflow: hidden;
+}
+.jarvis-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: var(--radius-full);
+  width: 0%; transition: width 300ms ease;
+}
+
+
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+#toast-container {
+  position: fixed; top: 80px; right: 24px;
+  z-index: 700; display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xl);
+  font-size: 13px; color: var(--text);
+  max-width: 320px;
+  border-left: 3px solid var(--accent);
+  transform: translateX(120%);
+  transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1);
+  position: relative; overflow: hidden;
+}
+.toast.show { transform: translateX(0); }
+.toast.toast-error { border-left-color: #ef4444; }
+.toast.toast-success { border-left-color: #22c55e; }
+.toast-progress { position: absolute; bottom: 0; left: 0; height: 2px; background: var(--accent); border-radius: 0 0 var(--radius-md) var(--radius-md); animation: toastDrain 3s linear forwards; }
+@keyframes toastDrain { from { width: 100%; } to { width: 0%; } }
+
+/* ═══════════════════════════════════════
+   RESUME BANNER
+═══════════════════════════════════════ */
+#resume-banner {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white;
+  border-top: 1px solid var(--border);
+  padding: 16px 48px;
+  z-index: 300;
+  flex-wrap: wrap;
+  align-items: center; justify-content: space-between; gap: 12px;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.08);
+}
+#resume-banner.show { display: flex; }
+.resume-text { font-size: 14px; color: var(--text); }
+.resume-text strong { color: var(--accent); }
+.resume-actions { display: flex; gap: 8px; }
+
+/* ═══════════════════════════════════════
+   STAGE TRANSITION LINE
+═══════════════════════════════════════ */
+.stage-transition-line {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left;
+  z-index: 999;
+  transition: transform 300ms ease;
+}
+.stage-transition-line.animate {
+  animation: scanLine 400ms ease;
+}
+@keyframes scanLine {
+  0% { transform: scaleX(0); transform-origin: left; opacity: 1; }
+  100% { transform: scaleX(1); transform-origin: left; opacity: 0; }
+}
+
+/* ═══════════════════════════════════════
+   SCROLL ANIMATIONS
+═══════════════════════════════════════ */
+.scroll-reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 500ms ease, transform 500ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.scroll-reveal.revealed { opacity: 1; transform: translateY(0); }
+
+/* ═══════════════════════════════════════
+   UTIL
+═══════════════════════════════════════ */
+.label-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+}
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-4 { margin-bottom: 16px; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.flex-1 { flex: 1; }
+.w-full { width: 100%; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  #navbar { padding: 0 20px; }
+  .nav-pills { display: none; }
+  #stages-wrapper { padding: 0 20px; }
+  #progress-bar-wrap { padding: 0 20px; }
+  .idea-layout { grid-template-columns: 1fr; }
+  .ideas-grid { grid-template-columns: 1fr 1fr; }
+  .validation-grid { grid-template-columns: 1fr; }
+  .brand-layout { grid-template-columns: 1fr; }
+  .copy-wrapper { flex-direction: column; }
+  .kpi-strip { grid-template-columns: repeat(3,1fr); }
+  .marketing-grid { grid-template-columns: 1fr; }
+  .launch-layout { grid-template-columns: 1fr; }
+  .hero-headline { font-size: 44px; }
+  .proof-strip { padding: 16px 20px; gap: 20px; }
+}
+@media (max-width: 600px) {
+  .ideas-grid { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: repeat(2,1fr); }
+}
+
+/* ═══════════════════════════════════════
+   PRINT
+═══════════════════════════════════════ */
+@media print {
+  body { background: white; color: black; }
+  #navbar, #jarvis-overlay, #toast-container, #resume-banner,
+  canvas, .hero-photo-bg, .btn-primary, .btn-ghost, .stage-transition-line,
+  #progress-bar-wrap { display: none !important; }
+  .pitch-card { border: 1px solid #ccc; box-shadow: none; }
+  @page { margin: 1.5cm; }
+}
+</style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Stage transition sweep line -->
+<div class="stage-transition-line" id="scan-line"></div>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav id="navbar">
+  <a class="nav-logo" href="#">L<span>∧</span>UNCHPAD AI</a>
+  <div class="nav-pills" id="nav-pills">
+    <div class="nav-pill active" onclick="goToStage(1)">Idea Lab</div>
+    <div class="nav-pill" onclick="goToStage(2)">Validate</div>
+    <div class="nav-pill" onclick="goToStage(3)">Brand</div>
+    <div class="nav-pill" onclick="goToStage(4)">Copy</div>
+    <div class="nav-pill" onclick="goToStage(5)">Marketing</div>
+    <div class="nav-pill" onclick="goToStage(6)">Launch</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-avatar" id="nav-avatar">LP</div>
+  </div>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero">
+  <div class="hero-photo-bg" id="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      LaunchPad AI &nbsp;◆&nbsp; Startup Operating System
+    </div>
+    <h1 class="hero-headline">
+      <span class="hero-word" id="hw1">FROM&nbsp;</span><span class="hero-word" id="hw2">IDEA</span>
+      <span class="line2">
+        <span class="hero-word" id="hw3">TO&nbsp;</span><span class="hero-word" id="hw4">INVESTOR.</span>
+      </span>
+    </h1>
+    <p class="hero-sub">The AI co-founder that thinks, researches, and builds your startup — in 10 minutes.</p>
+    <div class="hero-cta-row">
+      <button class="btn-primary" onclick="scrollToStages()">Begin Your Startup →</button>
+      <button class="btn-ghost" onclick="goToStage(2)">Watch Demo ▷</button>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    SCROLL TO EXPLORE
+  </div>
+</section>
+
+<!-- ═══════════════ PROOF STRIP ═══════════════ -->
+<div class="proof-strip">
+  <div class="proof-item">
+    <div>
+      <div class="proof-num">2,400+</div>
+      <div style="font-size:11px;color:var(--muted)">Startups Launched</div>
+    </div>
+  </div>
+  <div class="proof-divider"></div>
+  <div class="proof-item">
+    <div>
+      <div class="proof-num">$184M</div>
+      <div style="font-size:11px;color:var(--muted)">Funding Raised</div>
+    </div>
+  </div>
+  <div class="proof-divider"></div>
+  <div class="proof-item">
+    <div>
+      <div class="proof-num">10 min</div>
+      <div style="font-size:11px;color:var(--muted)">Avg. Time to MVP</div>
+    </div>
+  </div>
+  <div class="proof-divider"></div>
+  <div class="proof-item">
+    <div>
+      <div class="proof-num">4.9★</div>
+      <div style="font-size:11px;color:var(--muted)">User Rating</div>
+    </div>
+  </div>
+  <div class="proof-divider"></div>
+  <div class="proof-item">
+    <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=280&q=80"
+         style="width:80px;height:40px;object-fit:cover;border-radius:8px;opacity:0.5;" alt="team">
+    <div style="font-size:12px;color:var(--muted)">Trusted by founders worldwide</div>
+  </div>
+</div>
+
+<!-- ═══════════════ PROGRESS BAR ═══════════════ -->
+<div id="progress-bar-wrap">
+  <div class="progress-track" id="progress-track">
+    <div class="progress-seg active" onclick="goToStage(1)"><div class="progress-seg-fill"></div></div>
+    <div class="progress-seg" onclick="goToStage(2)"><div class="progress-seg-fill"></div></div>
+    <div class="progress-seg" onclick="goToStage(3)"><div class="progress-seg-fill"></div></div>
+    <div class="progress-seg" onclick="goToStage(4)"><div class="progress-seg-fill"></div></div>
+    <div class="progress-seg" onclick="goToStage(5)"><div class="progress-seg-fill"></div></div>
+    <div class="progress-seg" onclick="goToStage(6)"><div class="progress-seg-fill"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ STAGES ═══════════════ -->
+<div id="stages-wrapper">
+
+  <!-- ── STAGE 1: IDEA LAB ── -->
+  <div class="stage-panel active" id="stage-1">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 01</div>
+        <div class="stage-title">Idea <span>Lab</span></div>
+        <div class="stage-desc">Pick a domain. JARVIS will research the space and surface the 4 best startup opportunities right now.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1434626881859-194d67b2b86f?w=400&q=80" class="stage-photo" alt="Ideation">
+    </div>
+
+    <!-- Domain Topic Cards -->
+    <div id="domain-cards-section">
+      <div class="flex items-center gap-3 mb-4" style="margin-bottom:24px;">
+        <span class="label-sm">Choose Your Domain</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:12px;color:var(--muted);">Click any domain to generate ideas</span>
+      </div>
+      <div class="domain-topic-grid" id="domain-topic-grid">
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Tech & AI')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=500&q=75" alt="Tech & AI" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🤖</div>
+            <div class="domain-topic-name">Tech &amp; AI</div>
+            <div class="domain-topic-sub">Machine learning · Automation · SaaS</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Health')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&q=75" alt="Health" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🏥</div>
+            <div class="domain-topic-name">Health</div>
+            <div class="domain-topic-sub">MedTech · Wellness · Mental health</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Finance')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=500&q=75" alt="Finance" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">💰</div>
+            <div class="domain-topic-name">Finance</div>
+            <div class="domain-topic-sub">FinTech · Payments · Wealth</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Education')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=75" alt="Education" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">📚</div>
+            <div class="domain-topic-name">Education</div>
+            <div class="domain-topic-sub">EdTech · Upskilling · Learning</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'E-commerce')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=500&q=75" alt="E-commerce" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🛒</div>
+            <div class="domain-topic-name">E-commerce</div>
+            <div class="domain-topic-sub">D2C · Marketplaces · Retail tech</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Food')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=75" alt="Food" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🍕</div>
+            <div class="domain-topic-name">Food</div>
+            <div class="domain-topic-sub">FoodTech · Delivery · AgriTech</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Sustainability')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=500&q=75" alt="Sustainability" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🌱</div>
+            <div class="domain-topic-name">Sustainability</div>
+            <div class="domain-topic-sub">CleanTech · ESG · Green energy</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+        <div class="domain-topic-card" onclick="selectTopicDomain(this,'Real Estate')">
+          <div class="domain-topic-img-wrap">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500&q=75" alt="Real Estate" loading="lazy">
+            <div class="domain-topic-overlay"></div>
+          </div>
+          <div class="domain-topic-body">
+            <div class="domain-topic-icon">🏠</div>
+            <div class="domain-topic-name">Real Estate</div>
+            <div class="domain-topic-sub">PropTech · Rentals · Smart homes</div>
+            <div class="domain-topic-arrow">Research →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ideas Output (2x2 grid) -->
+    <div id="ideas-output" style="display:none; margin-top:48px;">
+      <div class="flex items-center gap-3" style="margin-bottom:8px;">
+        <div id="ideas-domain-badge" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent-light);border:1px solid var(--border-em);border-radius:var(--radius-full);padding:6px 16px;font-size:12px;font-weight:600;color:var(--accent);"></div>
+        <button onclick="backToDomains()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-full);padding:6px 14px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 200ms ease;" onmouseover="this.style.borderColor='var(--border-em)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">← Change Domain</button>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span class="label-sm">4 Opportunities Identified</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:28px;font-weight:300;">JARVIS has researched the <strong id="ideas-domain-name" style="color:var(--text);font-weight:600;"></strong> space and found these high-potential gaps. Pick one to continue.</p>
+      <div class="ideas-grid-2x2" id="ideas-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 2: VALIDATION ── -->
+  <div class="stage-panel" id="stage-2">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 02</div>
+        <div class="stage-title">Market <span>Validation</span></div>
+        <div class="stage-desc" id="val-subtitle">Analyzing your market opportunity with real data.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80" class="stage-photo" alt="Analytics">
+    </div>
+
+    <!-- Sample Reference Banner -->
+    <div class="sample-banner">
+      <div class="sample-banner-label">📋 SAMPLE · See how DocFlow (AI clinic notes) was validated</div>
+      <div class="sample-stats-row">
+        <div class="sample-stat"><div class="sample-stat-val">$8.9B</div><div class="sample-stat-lbl">TAM</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">$1.3B</div><div class="sample-stat-lbl">SAM</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">9.3/10</div><div class="sample-stat-lbl">Opp. Score</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">✅ Green</div><div class="sample-stat-lbl">Verdict</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide"><div style="font-size:12px;color:var(--text-2);font-style:italic;">"Clinics spend 3hrs/day on admin. No all-in-one voice-to-EMR tool exists under $200/mo. Timing: post-COVID telehealth boom. Entry: HIPAA compliance moat."</div></div>
+      </div>
+    </div>
+
+    <div class="validation-grid scroll-reveal">
+      <div class="val-card">
+        <div class="val-header">Market Size</div>
+        <canvas id="tam-chart" height="180"></canvas>
+        <div style="margin-top:16px;">
+          <div class="score-bar-row">
+            <div class="score-bar-label" style="width:50px;font-size:11px;">TAM</div>
+            <div class="score-bar-wrap"><div class="score-bar-fill" data-width="90"></div></div>
+            <div class="score-bar-num" id="tam-val">$8.4B</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-label" style="width:50px;font-size:11px;">SAM</div>
+            <div class="score-bar-wrap"><div class="score-bar-fill" data-width="60"></div></div>
+            <div class="score-bar-num" id="sam-val">$1.2B</div>
+          </div>
+          <div class="score-bar-row">
+            <div class="score-bar-label" style="width:50px;font-size:11px;">SOM</div>
+            <div class="score-bar-wrap"><div class="score-bar-fill" data-width="25"></div></div>
+            <div class="score-bar-num" id="som-val">$84M</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:8px 12px;background:rgba(34,197,94,0.08);border-radius:8px;font-size:12px;color:#16a34a;font-weight:600;">
+          ↑ <span id="growth-val">34%</span> YoY Growth
+        </div>
+      </div>
+      <div class="val-card">
+        <div class="val-header">Competitive Landscape</div>
+        <canvas id="radar-chart" height="200"></canvas>
+        <div style="margin-top:12px;padding:12px;border-left:3px solid var(--accent);background:var(--accent-light);border-radius:0 8px 8px 0;font-size:12px;color:var(--text-2);">
+          <strong>Your Advantage:</strong> <span id="advantage-text">First-mover in AI-powered personalization for this niche.</span>
+        </div>
+      </div>
+      <div class="val-card">
+        <div class="val-header">Opportunity Score</div>
+        <div style="text-align:center;padding:16px 0;">
+          <span class="score-big" id="opp-score">0</span><span class="score-denom">/10</span>
+        </div>
+        <div id="score-bars">
+          <div class="score-bar-row"><div class="score-bar-label">Market Timing</div><div class="score-bar-wrap"><div class="score-bar-fill" data-width="85"></div></div><div class="score-bar-num">8.5</div></div>
+          <div class="score-bar-row"><div class="score-bar-label">Competition Gap</div><div class="score-bar-wrap"><div class="score-bar-fill" data-width="70"></div></div><div class="score-bar-num">7.0</div></div>
+          <div class="score-bar-row"><div class="score-bar-label">Revenue Model</div><div class="score-bar-wrap"><div class="score-bar-fill" data-width="90"></div></div><div class="score-bar-num">9.0</div></div>
+          <div class="score-bar-row"><div class="score-bar-label">Entry Barrier</div><div class="score-bar-wrap"><div class="score-bar-fill" data-width="60"></div></div><div class="score-bar-num">6.0</div></div>
+          <div class="score-bar-row"><div class="score-bar-label">Growth Potential</div><div class="score-bar-wrap"><div class="score-bar-fill" data-width="92"></div></div><div class="score-bar-num">9.2</div></div>
+        </div>
+        <div class="verdict-box verdict-green" id="verdict-box">✓ GREEN LIGHT — PROCEED</div>
+        <button class="btn-primary w-full mt-4" style="justify-content:center;font-size:12px;" onclick="goToStage(3)">Continue to Brand Forge →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 3: BRAND FORGE ── -->
+  <div class="stage-panel" id="stage-3">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 03</div>
+        <div class="stage-title">Brand <span>Forge</span></div>
+        <div class="stage-desc">Build your brand identity — name, personality, and visual direction.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&q=80" class="stage-photo" alt="Branding">
+    </div>
+
+    <!-- Sample Reference Banner -->
+    <div class="sample-banner">
+      <div class="sample-banner-label">📋 SAMPLE · DocFlow brand identity — see how a complete brand was built</div>
+      <div class="sample-stats-row">
+        <div class="sample-stat"><div class="sample-stat-val" style="font-family:'Playfair Display',serif;">DocFlow</div><div class="sample-stat-lbl">Brand Name</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val" style="font-size:13px;">"Notes write themselves."</div><div class="sample-stat-lbl">Tagline</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat">
+          <div style="display:flex;gap:5px;margin-bottom:4px;">
+            <div style="width:20px;height:20px;border-radius:4px;background:#0EA5E9;"></div>
+            <div style="width:20px;height:20px;border-radius:4px;background:#1C1917;"></div>
+            <div style="width:20px;height:20px;border-radius:4px;background:#F0F9FF;"></div>
+            <div style="width:20px;height:20px;border-radius:4px;background:#22C55E;"></div>
+          </div>
+          <div class="sample-stat-lbl">Palette</div>
+        </div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">Ravi Sharma, 34</div><div class="sample-stat-lbl">Clinic Owner · Delhi · "I hate paperwork"</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide"><div style="font-size:12px;color:var(--text-2);font-style:italic;">Voice: Clinical but warm. Bold claim → proof → relief. Competitor tone: cold/corporate. DocFlow: human and efficient.</div></div>
+      </div>
+    </div>
+    <div class="brand-layout scroll-reveal">
+      <div>
+        <div class="brand-display" id="brand-display">
+          <div class="brand-display-photo"></div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:12px;">Your Brand</div>
+            <div class="brand-display-name" id="brand-name-display">NovaSpark</div>
+            <div class="brand-display-tagline" id="brand-tagline-display">Building tomorrow's solutions today.</div>
+          </div>
+          <div>
+            <div class="brand-palette" id="brand-palette">
+              <div class="swatch" style="background:#FF6B35;" title="#FF6B35"></div>
+              <div class="swatch" style="background:#1C1917;" title="#1C1917"></div>
+              <div class="swatch" style="background:#E8A838;" title="#E8A838"></div>
+              <div class="swatch" style="background:#F4F1EB;" title="#F4F1EB"></div>
+              <div class="swatch" style="background:#2D9CDB;" title="#2D9CDB"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);">
+          <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=500&q=80" style="width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:12px;" alt="Brand mood">
+          <div style="font-size:12px;color:var(--muted);font-weight:300;">Brand mood board · Curated aesthetic direction</div>
+        </div>
+      </div>
+      <div>
+        <span class="label-sm">Name Options</span>
+        <div class="name-options mt-4" id="name-options">
+          <div class="name-card active" onclick="selectName(this,'NovaSpark')">
+            <div class="name-card-text">NovaSpark</div>
+            <div class="name-card-tld">.io · .ai · .co</div>
+          </div>
+          <div class="name-card" onclick="selectName(this,'LaunchFlow')">
+            <div class="name-card-text">LaunchFlow</div>
+            <div class="name-card-tld">.app · .io</div>
+          </div>
+          <div class="name-card" onclick="selectName(this,'FounderOS')">
+            <div class="name-card-text">FounderOS</div>
+            <div class="name-card-tld">.co · .ai</div>
+          </div>
+        </div>
+        <button class="btn-primary mt-4" style="font-size:12px;" onclick="generateBrand()">✦ Generate New Names with AI</button>
+
+        <div style="margin-top:28px;">
+          <span class="label-sm">Target Persona</span>
+          <div class="persona-card mt-4">
+            <div class="persona-avatar" id="persona-avatar">AS</div>
+            <div>
+              <div class="persona-name" id="persona-name">Arjun Shah</div>
+              <div class="persona-role" id="persona-role">28 · First-time Founder · Bangalore</div>
+              <div class="persona-point" id="persona-pain">Struggles to validate ideas quickly before investing time and money.</div>
+              <div class="persona-point goal" id="persona-goal">Wants a co-founder that handles strategy so he can focus on building.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:28px;">
+          <span class="label-sm">Brand Voice</span>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;">
+            <div style="background:var(--accent-light);border:1px solid var(--border-em);border-radius:var(--radius-md);padding:14px;text-align:center;">
+              <div style="font-weight:700;font-size:13px;color:var(--accent);">BOLD</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">"You don't need luck.<br>You need a system."</div>
+            </div>
+            <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center;">
+              <div style="font-weight:700;font-size:13px;color:var(--text);">CLEAR</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">"One tool.<br>Every step."</div>
+            </div>
+            <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center;">
+              <div style="font-weight:700;font-size:13px;color:var(--text);">HUMAN</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">"Built for founders,<br>by founders."</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary w-full mt-6" style="justify-content:center;" onclick="goToStage(4)">Continue to Copy Engine →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 4: COPY ENGINE ── -->
+  <div class="stage-panel" id="stage-4">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 04</div>
+        <div class="stage-title">Copy <span>Engine</span></div>
+        <div class="stage-desc">AI-written marketing copy for your entire website, ready to use.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80" class="stage-photo" alt="Writing">
+    </div>
+
+    <!-- Sample Reference Banner -->
+    <div class="sample-banner">
+      <div class="sample-banner-label">📋 SAMPLE · DocFlow copy that converted 12% on a cold landing page</div>
+      <div class="sample-stats-row" style="flex-wrap:wrap;gap:10px;">
+        <div class="sample-stat-wide" style="flex:1;min-width:200px;">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;">HERO</div>
+          <div style="font-size:12px;color:var(--text-2);font-style:italic;">"Your clinic notes write themselves. See patients. Not paperwork."</div>
+        </div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide" style="flex:1;min-width:200px;">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;">SOCIAL PROOF</div>
+          <div style="font-size:12px;color:var(--text-2);font-style:italic;">"We went from 40 patients/day to 58. DocFlow gave us back 3 hours." — Dr. Meera, Apollo</div>
+        </div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide" style="flex:1;min-width:180px;">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;">CTA</div>
+          <div style="font-size:12px;color:var(--text-2);font-style:italic;">"Start free. No EMR setup. Works day one."</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary mb-4" onclick="generateCopy()" style="font-size:12px;">✦ Generate All Copy with JARVIS</button>
+    <div class="copy-wrapper scroll-reveal">
+      <div class="copy-left">
+        <div class="copy-panel-header">
+          Generated Copy
+          <button class="btn-ghost" style="padding:6px 12px;font-size:11px;" onclick="exportCopy()">Export .TXT</button>
+        </div>
+        <div class="copy-accordion" id="copy-accordion">
+          <div class="acc-item open">
+            <div class="acc-head" onclick="toggleAcc(this)">▼ HERO SECTION <span class="acc-icon">›</span></div>
+            <div class="acc-body">
+              <div class="copy-box">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <div id="copy-hero">The platform that turns your startup idea into a funded company — powered by AI intelligence and built for speed.</div>
+              </div>
+            </div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">▼ FEATURES <span class="acc-icon">›</span></div>
+            <div class="acc-body">
+              <div class="copy-box">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <div id="copy-features">✦ AI-Powered Idea Validation · Know if your idea has legs before you spend a rupee.
+✦ Brand Identity Builder · Logo, name, colors — done in minutes.
+✦ Copy Engine · Website copy that converts, generated instantly.
+✦ Marketing War Room · 90-day go-to-market strategy with budget allocation.</div>
+              </div>
+            </div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">▼ SOCIAL PROOF <span class="acc-icon">›</span></div>
+            <div class="acc-body">
+              <div class="copy-box">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <div id="copy-proof">"LaunchPad AI helped me go from idea to investor pitch in a single afternoon. We closed our seed round 3 weeks later." — Priya K., Founder</div>
+              </div>
+            </div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">▼ PRICING <span class="acc-icon">›</span></div>
+            <div class="acc-body">
+              <div class="copy-box">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <div id="copy-pricing">Starter: Free · 1 startup, 3 AI generations
+Growth: ₹999/mo · Unlimited startups, full AI suite
+Investor: ₹2999/mo · PDF exports, white-label, priority support</div>
+              </div>
+            </div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">▼ CALL TO ACTION <span class="acc-icon">›</span></div>
+            <div class="acc-body">
+              <div class="copy-box">
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                <div id="copy-cta">Stop thinking. Start building.
+Your co-founder is waiting.
+→ Launch Free Today</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="copy-right">
+        <div class="copy-panel-header">Live Preview · 100%</div>
+        <div class="preview-site">
+          <div class="preview-hero">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-bottom:8px;" id="preview-brand-name">NOVASPARK</div>
+            <h1 id="preview-headline">The platform that turns your startup idea into a funded company.</h1>
+            <p id="preview-subhead">AI-powered. Fast. Built for founders who move fast.</p>
+            <div class="preview-btn">Get Started Free →</div>
+          </div>
+          <div class="preview-feature-row">
+            <div class="preview-feature"><div class="preview-feature-icon">🔍</div><div class="preview-feature-name">Validate</div><div>Market research in minutes</div></div>
+            <div class="preview-feature"><div class="preview-feature-icon">✦</div><div class="preview-feature-name">Brand</div><div>Identity built by AI</div></div>
+            <div class="preview-feature"><div class="preview-feature-icon">📣</div><div class="preview-feature-name">Market</div><div>90-day go-to-market</div></div>
+          </div>
+          <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;">SOCIAL PROOF</div>
+            <p id="preview-proof" style="font-size:12px;color:var(--text-2);line-height:1.6;font-style:italic;">"LaunchPad AI helped me go from idea to investor pitch in a single afternoon."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;">
+      <button class="btn-ghost" onclick="generateCopy()">↻ Regenerate All</button>
+      <button class="btn-primary" onclick="goToStage(5)">Continue to Marketing →</button>
+    </div>
+  </div>
+
+  <!-- ── STAGE 5: MARKETING WAR ROOM ── -->
+  <div class="stage-panel" id="stage-5">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 05</div>
+        <div class="stage-title">Marketing <span>War Room</span></div>
+        <div class="stage-desc">Your complete go-to-market strategy, budget allocation, and 90-day calendar.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80" class="stage-photo" alt="Marketing">
+    </div>
+
+    <!-- Sample Reference Banner -->
+    <div class="sample-banner">
+      <div class="sample-banner-label">📋 SAMPLE · DocFlow's 90-day GTM — went from 0 to 340 paying clinics</div>
+      <div class="sample-stats-row">
+        <div class="sample-stat"><div class="sample-stat-val">₹480</div><div class="sample-stat-lbl">CAC (Month 3)</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">₹8,400</div><div class="sample-stat-lbl">LTV</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">17.5×</div><div class="sample-stat-lbl">LTV:CAC</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">#1</div><div class="sample-stat-lbl">Channel: Doctor WhatsApp groups</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide"><div style="font-size:12px;color:var(--text-2);font-style:italic;">Days 1–30: 50 free clinics for case studies. Days 31–60: LinkedIn + doctor forums. Days 61–90: referral program, ₹1,000/clinic.</div></div>
+      </div>
+    </div>
+    <div class="kpi-strip scroll-reveal">
+      <div class="kpi-card"><div class="kpi-num" data-count="12400">0</div><div class="kpi-label">Target Users</div></div>
+      <div class="kpi-card"><div class="kpi-num" data-count="320" data-prefix="₹">₹0</div><div class="kpi-label">CAC</div></div>
+      <div class="kpi-card"><div class="kpi-num" data-count="4200" data-prefix="₹">₹0</div><div class="kpi-label">LTV</div></div>
+      <div class="kpi-card"><div class="kpi-num" data-count="3.2" data-suffix="x">0x</div><div class="kpi-label">ROAS</div></div>
+      <div class="kpi-card"><div class="kpi-num" data-count="4.8" data-suffix="%">0%</div><div class="kpi-label">Conv. Rate</div></div>
+      <div class="kpi-card"><div class="kpi-num" data-count="91" data-suffix=" days">0 days</div><div class="kpi-label">Payback Period</div></div>
+    </div>
+    <div class="marketing-grid scroll-reveal">
+      <div class="mkt-card">
+        <div class="mkt-card-header">Channel Rankings by ROI</div>
+        <div id="channel-bars">
+          <div class="channel-bar-row"><div class="channel-name">Content SEO</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="88"></div></div><div class="channel-roi">8.8</div></div>
+          <div class="channel-bar-row"><div class="channel-name">Product Hunt</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="82"></div></div><div class="channel-roi">8.2</div></div>
+          <div class="channel-bar-row"><div class="channel-name">LinkedIn Ads</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="74"></div></div><div class="channel-roi">7.4</div></div>
+          <div class="channel-bar-row"><div class="channel-name">Community</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="70"></div></div><div class="channel-roi">7.0</div></div>
+          <div class="channel-bar-row"><div class="channel-name">Influencers</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="58"></div></div><div class="channel-roi">5.8</div></div>
+          <div class="channel-bar-row"><div class="channel-name">Google Ads</div><div class="channel-bar-bg"><div class="channel-bar-fill" data-width="52"></div></div><div class="channel-roi">5.2</div></div>
+        </div>
+      </div>
+      <div class="mkt-card">
+        <div class="mkt-card-header">Budget Allocator</div>
+        <canvas id="budget-chart" height="160"></canvas>
+        <div style="margin-top:16px;">
+          <div class="budget-slider-row">
+            <div class="budget-slider-label"><span>Content</span><span id="s1-pct">40%</span></div>
+            <input type="range" class="budget-slider" min="0" max="100" value="40" oninput="updateBudget()">
+          </div>
+          <div class="budget-slider-row">
+            <div class="budget-slider-label"><span>Paid Ads</span><span id="s2-pct">30%</span></div>
+            <input type="range" class="budget-slider" min="0" max="100" value="30" oninput="updateBudget()">
+          </div>
+          <div class="budget-slider-row">
+            <div class="budget-slider-label"><span>Community</span><span id="s3-pct">20%</span></div>
+            <input type="range" class="budget-slider" min="0" max="100" value="20" oninput="updateBudget()">
+          </div>
+          <div class="budget-slider-row">
+            <div class="budget-slider-label"><span>Influencers</span><span id="s4-pct">10%</span></div>
+            <input type="range" class="budget-slider" min="0" max="100" value="10" oninput="updateBudget()">
+          </div>
+        </div>
+      </div>
+      <div class="mkt-card">
+        <div class="mkt-card-header">Growth Projection (12 Weeks)</div>
+        <canvas id="growth-chart" height="180"></canvas>
+      </div>
+      <div class="mkt-card">
+        <div class="mkt-card-header">90-Day Activity Calendar</div>
+        <div id="mini-calendar" style="display:grid;grid-template-columns:repeat(13,1fr);gap:3px;"></div>
+        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:#FF6B35;"></div>Content</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:#E8A838;"></div>Paid</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:#2D9CDB;"></div>Community</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:#22c55e;"></div>Launch</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary mt-6" onclick="goToStage(6)">Continue to Launch →</button>
+  </div>
+
+  <!-- ── STAGE 6: LAUNCH COMMAND ── -->
+  <div class="stage-panel" id="stage-6">
+    <div class="stage-header">
+      <div>
+        <div class="stage-num">Stage 06</div>
+        <div class="stage-title">Launch <span>Command</span></div>
+        <div class="stage-desc">Final readiness check and your one-page investor pitch.</div>
+      </div>
+      <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&q=80" class="stage-photo" alt="Launch">
+    </div>
+
+    <!-- Sample Reference Banner -->
+    <div class="sample-banner">
+      <div class="sample-banner-label">📋 SAMPLE · DocFlow's seed pitch — raised ₹1.2Cr in 6 weeks after launch</div>
+      <div class="sample-stats-row">
+        <div class="sample-stat"><div class="sample-stat-val">₹1.2Cr</div><div class="sample-stat-lbl">Seed Raised</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">340</div><div class="sample-stat-lbl">Paying Clinics (Day 90)</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">₹2,999</div><div class="sample-stat-lbl">Avg MRR/clinic</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat"><div class="sample-stat-val">4.8★</div><div class="sample-stat-lbl">App Store Rating</div></div>
+        <div class="sample-stat-div"></div>
+        <div class="sample-stat-wide"><div style="font-size:12px;color:var(--text-2);font-style:italic;">Investor hook: "India has 1.2M clinics. 94% use pen and paper. We are the EHR for the missing middle."</div></div>
+      </div>
+    </div>
+    <div class="launch-layout scroll-reveal">
+      <div class="readiness-circle-wrap">
+        <svg class="readiness-svg" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="64" fill="none" stroke="var(--bg-surface)" stroke-width="8"/>
+          <circle cx="80" cy="80" r="64" fill="none" stroke="var(--accent)" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="402" stroke-dashoffset="402"
+            transform="rotate(-90 80 80)" id="readiness-ring" style="transition:stroke-dashoffset 1.5s cubic-bezier(0.16,1,0.3,1)"/>
+          <text x="80" y="72" class="readiness-score-text" id="readiness-score-text"
+            style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;fill:var(--accent);text-anchor:middle;dominant-baseline:middle;">0%</text>
+          <text x="80" y="104" style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--muted);text-anchor:middle;letter-spacing:1px;">READINESS</text>
+        </svg>
+        <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;">LAUNCH READY</div>
+      </div>
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="label-sm">Startup Checklist</span>
+          <span style="font-size:12px;color:var(--muted);" id="check-count">0 of 8 complete</span>
+        </div>
+        <div class="checklist-progress"><div class="checklist-progress-fill" id="check-fill"></div></div>
+        <div id="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Define target customer segment</div><div class="check-priority priority-high"></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Validate market size and demand</div><div class="check-priority priority-high"></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Generate brand identity</div><div class="check-priority priority-med"></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Write website copy</div><div class="check-priority priority-med"></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Set up landing page</div><div class="check-priority priority-high"></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Create marketing calendar</div><div class="check-priority priority-med"></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Configure analytics tracking</div><div class="check-priority priority-low"></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text">Prepare investor pitch deck</div><div class="check-priority priority-high"></div></div>
+        </div>
+      </div>
+      <div class="pitch-card">
+        <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px;">One-Page Pitch</div>
+        <div class="pitch-row"><div class="pitch-row-label">Problem</div><div class="pitch-row-value" id="pitch-problem">Founders waste months on strategy that AI can automate in minutes.</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">Solution</div><div class="pitch-row-value" id="pitch-solution">An AI co-founder that handles idea validation, branding, copy, and marketing.</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">Market Size</div><div class="pitch-row-value" id="pitch-market">$8.4B TAM · $1.2B SAM · 34% YoY growth</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">Business Model</div><div class="pitch-row-value" id="pitch-model">SaaS · ₹999–₹2,999/month · Free tier for acquisition</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">Competition</div><div class="pitch-row-value" id="pitch-competition">Fragmented tools (Notion, Figma, ChatGPT) · No end-to-end founder OS exists</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">Traction Plan</div><div class="pitch-row-value" id="pitch-traction">Product Hunt launch → Content SEO → Community-led growth</div></div>
+        <div class="pitch-row"><div class="pitch-row-label">The Ask</div><div class="pitch-row-value" id="pitch-ask">₹50L seed · 18-month runway · Focus on product + first 1,000 users</div></div>
+      </div>
+    </div>
+    <div class="launch-actions">
+      <button class="btn-primary" onclick="window.print()">📄 Export Pitch as PDF</button>
+      <button class="btn-ghost" onclick="startFresh()">↺ Start New Startup</button>
+      <button class="btn-ghost" onclick="shareResults()">↗ Share Results</button>
+    </div>
+  </div>
+
+</div><!-- /stages-wrapper -->
+
+<!-- ═══════════════ JARVIS OVERLAY ═══════════════ -->
+<div id="jarvis-overlay">
+  <div class="jarvis-content">
+    <div class="jarvis-sonar">
+      <div class="sonar-dot"></div>
+      <div class="sonar-ring"></div>
+      <div class="sonar-ring"></div>
+      <div class="sonar-ring"></div>
+    </div>
+    <div class="jarvis-status">JARVIS INTELLIGENCE</div>
+    <div class="jarvis-msg-main">Hold on, Sir.</div>
+    <div class="jarvis-msg-sub">Let me search this.</div>
+    <div class="jarvis-steps" id="jarvis-steps">
+      <div class="jarvis-step pending"><span class="step-num">01</span><span class="step-text">Initializing intelligence matrix...</span><span class="step-icon"></span></div>
+      <div class="jarvis-step pending"><span class="step-num">02</span><span class="step-text">Cross-referencing market signals...</span><span class="step-icon"></span></div>
+      <div class="jarvis-step pending"><span class="step-num">03</span><span class="step-text">Analyzing competitive landscape...</span><span class="step-icon"></span></div>
+      <div class="jarvis-step pending"><span class="step-num">04</span><span class="step-text">Processing strategic variables...</span><span class="step-icon"></span></div>
+      <div class="jarvis-step pending"><span class="step-num">05</span><span class="step-text">Synthesizing recommendations...</span><span class="step-icon"></span></div>
+      <div class="jarvis-step pending"><span class="step-num">06</span><span class="step-text">Compiling final output...</span><span class="step-icon"></span></div>
+    </div>
+    <div class="jarvis-progress-wrap">
+      <div class="jarvis-progress-labels">
+        <span id="jarvis-status-label">PROCESSING</span>
+        <span id="jarvis-pct">0%</span>
+      </div>
+      <div class="jarvis-progress-track">
+        <div class="jarvis-progress-fill" id="jarvis-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════ RESUME BANNER ═══════════════ -->
+<div id="resume-banner">
+  <div class="resume-text">You have an active session: <strong id="resume-idea-name">Your Startup</strong></div>
+  <div class="resume-actions">
+    <button class="btn-primary" style="font-size:12px;padding:10px 20px;" onclick="resumeSession()">Resume →</button>
+    <button class="btn-ghost" style="font-size:12px;padding:10px 20px;" onclick="startFresh()">Start Fresh</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   1. STATE MANAGEMENT
+═══════════════════════════════════════ */
+const state = {
+  currentStage: 1,
+  selectedDomain: null,
+  selectedIdea: null,
+  brandName: 'NovaSpark',
+  completedStages: [],
+  session: null
+};
+
+/* ═══════════════════════════════════════
+   2. CURSOR SYSTEM
+═══════════════════════════════════════ */
+const dot = document.getElementById('cursor-dot');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  dot.style.left = mx + 'px';
+  dot.style.top = my + 'px';
+});
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+document.addEventListener('mousedown', () => {
+  dot.style.transform = 'translate(-50%,-50%) scale(0.6)';
+  ring.style.transform = 'translate(-50%,-50%) scale(0.6)';
+});
+document.addEventListener('mouseup', () => {
+  dot.style.transform = 'translate(-50%,-50%) scale(1.2)';
+  ring.style.transform = 'translate(-50%,-50%) scale(1.2)';
+  setTimeout(() => {
+    dot.style.transform = 'translate(-50%,-50%) scale(1)';
+    ring.style.transform = 'translate(-50%,-50%) scale(1)';
+  }, 150);
+});
+
+/* ═══════════════════════════════════════
+   3. HERO ANIMATIONS
+═══════════════════════════════════════ */
+window.addEventListener('load', () => {
+  document.getElementById('hero-bg').classList.add('loaded');
+  const words = ['hw1','hw2','hw3','hw4'];
+  words.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if(el) el.classList.add('revealed');
+    }, 700 + i * 150);
+  });
+});
+
+/* ═══════════════════════════════════════
+   4. NAVBAR SCROLL
+═══════════════════════════════════════ */
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('navbar');
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+function scrollToStages() {
+  document.getElementById('progress-bar-wrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════════
+   5. STAGE NAVIGATION
+═══════════════════════════════════════ */
+function goToStage(n) {
+  const current = document.querySelector('.stage-panel.active');
+  if(current) current.classList.remove('active');
+  const next = document.getElementById('stage-' + n);
+  if(next) { next.classList.add('active'); }
+  state.currentStage = n;
+
+  // Scan line
+  const line = document.getElementById('scan-line');
+  line.classList.add('animate');
+  setTimeout(() => line.classList.remove('animate'), 400);
+
+  // Update nav pills
+  const pills = document.querySelectorAll('.nav-pill');
+  pills.forEach((p, i) => {
+    p.classList.remove('active','completed');
+    if(i + 1 === n) p.classList.add('active');
+    else if(state.completedStages.includes(i + 1)) p.classList.add('completed');
+  });
+
+  // Update progress bar
+  const segs = document.querySelectorAll('.progress-seg');
+  segs.forEach((s, i) => {
+    s.classList.remove('active','completed');
+    if(i + 1 === n) s.classList.add('active');
+    else if(state.completedStages.includes(i + 1)) s.classList.add('completed');
+  });
+
+  // Scroll
+  document.getElementById('progress-bar-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Init stage content
+  setTimeout(() => {
+    if(n === 2) initValidationCharts();
+    if(n === 5) initMarketingCharts();
+    if(n === 6) initLaunchStage();
+    animateScrollReveals();
+    animateCounters();
+    animateChannelBars();
+  }, 300);
+
+  saveSession();
+}
+
+/* ═══════════════════════════════════════
+   6. DOMAIN SELECTION
+═══════════════════════════════════════ */
+function selectDomain(el) {
+  document.querySelectorAll('.domain-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  state.selectedDomain = el.textContent.trim();
+}
+
+function updateCharCount(el) {
+  document.getElementById('char-counter').textContent = el.value.length + ' / 500';
+}
+
+async function selectTopicDomain(card, domain) {
+  // Mark card as loading
+  document.querySelectorAll('.domain-topic-card').forEach(c => c.classList.remove('loading'));
+  card.classList.add('loading');
+  card.querySelector('.domain-topic-arrow').textContent = 'Researching...';
+
+  state.selectedDomain = domain;
+  showJarvis();
+
+  const DOMAIN_PROMPTS = {
+    'Tech & AI': 'AI/ML tools, developer infrastructure, automation, no-code, enterprise SaaS, cybersecurity, edge computing',
+    'Health': 'telehealth, mental health apps, wearables, chronic disease management, health insurance, clinical trials, women\'s health',
+    'Finance': 'embedded finance, crypto/DeFi, SMB lending, personal finance, B2B payments, wealth management, insurance tech',
+    'Education': 'adult upskilling, coding bootcamps, K-12 EdTech, tutoring platforms, corporate training, language learning, credential verification',
+    'E-commerce': 'D2C brands, marketplace infrastructure, returns management, social commerce, B2B procurement, cross-border trade, logistics',
+    'Food': 'cloud kitchens, food waste reduction, plant-based alternatives, hyperlocal grocery, restaurant tech, nutrition platforms, agri supply chain',
+    'Sustainability': 'carbon tracking, EV charging, circular economy, green buildings, renewable energy management, ESG reporting, water tech',
+    'Real Estate': 'proptech for rentals, fractional ownership, smart home IoT, construction tech, co-living, commercial real estate SaaS, mortgage tech'
+  };
+
+  const context = DOMAIN_PROMPTS[domain] || domain;
+  const prompt = `You are a top-tier startup analyst. Research the ${domain} sector and identify the 4 most promising startup opportunities RIGHT NOW in 2025.
+Consider gaps in: ${context}.
+Return ONLY this JSON array (no markdown, no backticks, no explanation):
+[
+  {"emoji":"🤖","name":"StartupName","problem":"One sharp sentence describing the real painful problem","solution":"One sentence — what your startup does to fix it","market":"$XB market","score":"9.1/10","tag":"Category"},
+  ...4 items total
+]
+Rules: Names must be creative, punchy, founder-ready. Problems must be real and specific. Market sizes must be realistic and sourced from known data. Scores reflect opportunity score.`;
+
+  const raw = await askJarvis(prompt, 1200);
+  card.classList.remove('loading');
+  card.querySelector('.domain-topic-arrow').textContent = 'Research →';
+  hideJarvis();
+
+  if (!raw) return;
+  try {
+    let clean = raw.replace(/```json|```/g, '').trim();
+    const ideas = JSON.parse(clean);
+    renderIdeas(ideas, domain);
+  } catch(e) {
+    renderIdeas(getFallbackIdeas(domain), domain);
+  }
+}
+
+function backToDomains() {
+  document.getElementById('ideas-output').style.display = 'none';
+  document.getElementById('domain-cards-section').style.display = 'block';
+  document.getElementById('ideas-grid').innerHTML = '';
+}
+
+/* ═══════════════════════════════════════
+   7. CLAUDE API
+═══════════════════════════════════════ */
+const CLAUDE_API = "https://api.anthropic.com/v1/messages";
+const JARVIS_SYSTEM = `You are JARVIS — a hyper-intelligent AI startup strategist. Combine the mind of Paul Graham, Peter Thiel, and Elon Musk. Address the user as Sir. Be sharp, direct, data-driven. No fluff. When asked for JSON: return ONLY raw valid JSON. No markdown. No explanation. No backticks.`;
+
+async function askJarvis(prompt, maxTokens = 1500) {
+  try {
+    const res = await fetch(CLAUDE_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens,
+        system: JARVIS_SYSTEM,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.content[0].text;
+  } catch(e) {
+    showToast('JARVIS error: ' + e.message, 'error');
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════
+   8. JARVIS OVERLAY
+═══════════════════════════════════════ */
+let jarvisTimer = null;
+function showJarvis() {
+  document.getElementById('jarvis-overlay').classList.add('show');
+  const steps = document.querySelectorAll('.jarvis-step');
+  steps.forEach(s => { s.classList.remove('active','done'); s.classList.add('pending'); s.querySelector('.step-icon').textContent = ''; });
+  let pct = 0;
+  let stepIdx = 0;
+  const fill = document.getElementById('jarvis-fill');
+  const pctLabel = document.getElementById('jarvis-pct');
+  const statusLabel = document.getElementById('jarvis-status-label');
+
+  function activateStep(i) {
+    if(i < steps.length) {
+      if(i > 0) { steps[i-1].classList.remove('active'); steps[i-1].classList.add('done'); steps[i-1].querySelector('.step-icon').textContent = '✓'; }
+      steps[i].classList.remove('pending'); steps[i].classList.add('active'); steps[i].querySelector('.step-icon').textContent = '▊';
+    }
+  }
+  activateStep(0);
+
+  jarvisTimer = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 8 + 2, 93);
+    fill.style.width = pct + '%';
+    pctLabel.textContent = Math.floor(pct) + '%';
+    const newStep = Math.floor((pct / 93) * steps.length);
+    if(newStep > stepIdx && newStep < steps.length) { stepIdx = newStep; activateStep(stepIdx); }
+  }, 400);
+}
+
+function hideJarvis() {
+  clearInterval(jarvisTimer);
+  const fill = document.getElementById('jarvis-fill');
+  const pctLabel = document.getElementById('jarvis-pct');
+  const statusLabel = document.getElementById('jarvis-status-label');
+  const steps = document.querySelectorAll('.jarvis-step');
+  fill.style.width = '100%'; fill.style.background = '#22c55e';
+  pctLabel.textContent = '100%';
+  statusLabel.textContent = 'COMPLETE';
+  steps.forEach(s => { s.classList.remove('active','pending'); s.classList.add('done'); s.querySelector('.step-icon').textContent = '✓'; });
+  setTimeout(() => {
+    document.getElementById('jarvis-overlay').classList.remove('show');
+    fill.style.width = '0%'; fill.style.background = '';
+    statusLabel.textContent = 'PROCESSING';
+    pctLabel.textContent = '0%';
+  }, 700);
+}
+
+/* ═══════════════════════════════════════
+   9. STAGE 1 — IDEA GENERATION
+═══════════════════════════════════════ */
+const IDEA_IMAGES = {
+  'Tech & AI':       'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=70',
+  'Health':          'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&q=70',
+  'Finance':         'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=70',
+  'Education':       'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=70',
+  'E-commerce':      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=70',
+  'Food':            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=70',
+  'Sustainability':  'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=70',
+  'Real Estate':     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=70',
+};
+const FALLBACK_IMGS = [
+  'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&q=70',
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=70',
+  'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&q=70',
+  'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400&q=70'
+];
+
+function getFallbackIdeas(domain) {
+  const banks = {
+    'Tech & AI': [
+      {emoji:'🤖',name:'AutoBrief',problem:'Marketing agencies spend 8+ hours writing briefs manually.',solution:'AI that generates client briefs from a 2-min voice note.',market:'$2.1B market',score:'8.8/10',tag:'MarTech'},
+      {emoji:'🔐',name:'VaultGuard',problem:'SMBs are breached 3× more than enterprises but can\'t afford security.',solution:'Automated cybersecurity for small teams at $49/mo.',market:'$5.6B market',score:'9.0/10',tag:'Security'},
+      {emoji:'⚙️',name:'FlowSync',problem:'No-code tools break when logic gets complex.',solution:'AI that writes clean code behind visual workflows.',market:'$3.8B market',score:'8.5/10',tag:'Dev Tools'},
+      {emoji:'🧠',name:'MindAPI',problem:'AI fine-tuning requires ML expertise most startups don\'t have.',solution:'One-click fine-tuning platform with zero ML knowledge needed.',market:'$4.4B market',score:'9.2/10',tag:'AI Infra'}
+    ],
+    'Health': [
+      {emoji:'💊',name:'DocFlow',problem:'Clinics lose 3hrs/day on admin paperwork.',solution:'Voice-to-EMR AI that automates clinical notes in real time.',market:'$8.9B market',score:'9.3/10',tag:'ClinicTech'},
+      {emoji:'🧬',name:'GenWell',problem:'Chronic disease patients skip meds 50% of the time.',solution:'AI companion that predicts drop-off and nudges patients.',market:'$6.1B market',score:'8.7/10',tag:'Digital Health'},
+      {emoji:'🧘',name:'CalmOS',problem:'Burnout costs employers $1T/year globally.',solution:'B2B mental wellness OS with real-time stress analytics.',market:'$3.4B market',score:'8.9/10',tag:'Wellness'},
+      {emoji:'👶',name:'MaternaCare',problem:'Postpartum care ends at 6 weeks despite 12-month needs.',solution:'Subscription platform for ongoing maternal health support.',market:'$2.8B market',score:'8.6/10',tag:'Women\'s Health'}
+    ],
+    'Finance': [
+      {emoji:'💸',name:'TaxPilot',problem:'Freelancers overpay taxes by avg ₹40K/year.',solution:'Real-time tax optimization engine for gig workers.',market:'$3.4B market',score:'8.7/10',tag:'TaxTech'},
+      {emoji:'🏦',name:'NestEgg',problem:'Gen Z saves 60% less than prior generations at same age.',solution:'Micro-investing app that rounds up and auto-diversifies.',market:'$5.2B market',score:'8.9/10',tag:'WealthTech'},
+      {emoji:'📊',name:'LedgerAI',problem:'SMBs spend 12 hrs/month reconciling accounts manually.',solution:'AI bookkeeper that closes books in under 10 minutes.',market:'$4.7B market',score:'9.1/10',tag:'FinOps'},
+      {emoji:'🔄',name:'FlowCredit',problem:'60% of MSMEs rejected for loans due to lack of credit history.',solution:'Alternative credit scoring using cash flow and UPI data.',market:'$6.9B market',score:'9.3/10',tag:'LendTech'}
+    ],
+    'Education': [
+      {emoji:'🎓',name:'SkillBridge',problem:'Students can\'t match skills to job market needs.',solution:'AI-powered skill gap analysis and personalised learning paths.',market:'$6.2B market',score:'8.4/10',tag:'EdTech'},
+      {emoji:'🗣️',name:'TalkFlow',problem:'Non-native English speakers struggle to advance in global jobs.',solution:'Real-time AI speech coach with live feedback.',market:'$3.1B market',score:'8.8/10',tag:'Language'},
+      {emoji:'📝',name:'GradeBot',problem:'Teachers spend 30% of work hours marking assignments.',solution:'AI that grades and gives feedback in the teacher\'s own style.',market:'$2.7B market',score:'8.6/10',tag:'K-12 Tools'},
+      {emoji:'🏆',name:'CredChain',problem:'Fake degrees cost employers $600B/year in bad hires.',solution:'Blockchain credential verification done in 60 seconds.',market:'$1.9B market',score:'9.0/10',tag:'CredTech'}
+    ],
+    'E-commerce': [
+      {emoji:'🚚',name:'LastMile AI',problem:'D2C brands lose 23% revenue to failed deliveries.',solution:'Predictive delivery intelligence and smart retry engine.',market:'$5.1B market',score:'8.9/10',tag:'LogisTech'},
+      {emoji:'↩️',name:'ReturnZero',problem:'Returns cost e-commerce brands $550B annually.',solution:'AI that predicts and prevents returns before they happen.',market:'$4.3B market',score:'9.1/10',tag:'RetailOps'},
+      {emoji:'🎥',name:'LiveCart',problem:'Social sellers have no native checkout on video platforms.',solution:'One-tap in-video checkout for live commerce creators.',market:'$6.8B market',score:'9.3/10',tag:'Social Commerce'},
+      {emoji:'🌍',name:'BorderFree',problem:'Cross-border sellers lose 40% margin to compliance costs.',solution:'Automated duties, tax, and import compliance platform.',market:'$3.6B market',score:'8.7/10',tag:'Cross-border'}
+    ],
+    'Food': [
+      {emoji:'♻️',name:'FreshLoop',problem:'Restaurants waste 40% of food inventory weekly.',solution:'AI demand forecasting that cuts food waste by 60%.',market:'$3.8B market',score:'9.0/10',tag:'FoodTech'},
+      {emoji:'☁️',name:'CloudKitchen OS',problem:'Ghost kitchens have no unified ops platform.',solution:'All-in-one SaaS for cloud kitchen inventory, orders, staff.',market:'$2.9B market',score:'8.6/10',tag:'RestaurantTech'},
+      {emoji:'🌿',name:'NutriPlan',problem:'85% of people abandon diet plans within 3 weeks.',solution:'Hyper-personalised AI nutrition coach synced to your health data.',market:'$4.1B market',score:'8.8/10',tag:'Nutrition'},
+      {emoji:'🚜',name:'HarvestLink',problem:'Farmers get 30% of market price due to 5-layer middlemen.',solution:'Direct farm-to-brand marketplace with logistics included.',market:'$7.2B market',score:'9.2/10',tag:'AgriTech'}
+    ],
+    'Sustainability': [
+      {emoji:'🌿',name:'GreenLedger',problem:'SMBs can\'t track their carbon footprint affordably.',solution:'Automated ESG reporting pulled from accounting data.',market:'$4.6B market',score:'9.1/10',tag:'ESG'},
+      {emoji:'⚡',name:'ChargeGrid',problem:'EV adoption is slowed by patchy charging infrastructure.',solution:'B2B platform for deploying and managing EV chargers.',market:'$8.3B market',score:'9.4/10',tag:'CleanTech'},
+      {emoji:'🏗️',name:'BuildGreen',problem:'Construction causes 40% of global carbon emissions.',solution:'Material sourcing platform that scores and offsets emissions.',market:'$3.2B market',score:'8.7/10',tag:'ConstructionTech'},
+      {emoji:'💧',name:'AquaSense',problem:'30% of municipal water is lost to undetected pipe leaks.',solution:'IoT sensor network that detects leaks in real time.',market:'$2.5B market',score:'8.9/10',tag:'WaterTech'}
+    ],
+    'Real Estate': [
+      {emoji:'🏘️',name:'NestFrac',problem:'Gen Z can\'t afford property but wants to build wealth.',solution:'Fractional property ownership platform starting at ₹5,000.',market:'$6.4B market',score:'9.2/10',tag:'PropTech'},
+      {emoji:'🔑',name:'KeyFlow',problem:'Rental management is a 10-step manual process for landlords.',solution:'AI property manager that handles listings, leases, and repairs.',market:'$3.7B market',score:'8.8/10',tag:'Rentals'},
+      {emoji:'🏗️',name:'BuildTrack',problem:'Construction projects run 20% over budget on average.',solution:'Real-time project intelligence platform for developers.',market:'$4.9B market',score:'8.6/10',tag:'ConTech'},
+      {emoji:'🏡',name:'SmartNest',problem:'Smart home installs are DIY nightmares for non-tech owners.',solution:'Managed smart home setup and support subscription.',market:'$2.3B market',score:'8.4/10',tag:'IoT'}
+    ]
+  };
+  return banks[domain] || banks['Tech & AI'];
+}
+
+const DOMAIN_TRENDS = {
+  'Tech & AI': [
+    { label:'AI market size by 2030', value:'$1.8T', growth:'+38% CAGR' },
+    { label:'Global SaaS spend 2025', value:'$232B', growth:'+18% YoY' },
+    { label:'AI startups funded 2024', value:'8,400+', growth:'+41% vs 2023' },
+    { label:'No-code platform users', value:'12M+', growth:'+65% YoY' },
+  ],
+  'Health': [
+    { label:'Digital health market 2030', value:'$660B', growth:'+28% CAGR' },
+    { label:'Telehealth visits per month', value:'22M', growth:'+34% YoY' },
+    { label:'Mental health app downloads', value:'1.1B', growth:'+56% since 2020' },
+    { label:'Health AI investment 2024', value:'$6.4B', growth:'+22% vs 2023' },
+  ],
+  'Finance': [
+    { label:'Global FinTech market 2030', value:'$644B', growth:'+27% CAGR' },
+    { label:'UPI transactions/month India', value:'14B+', growth:'+46% YoY' },
+    { label:'MSME credit gap India', value:'$530B', growth:'Underserved' },
+    { label:'WealthTech users globally', value:'180M+', growth:'+33% YoY' },
+  ],
+  'Education': [
+    { label:'EdTech global market 2030', value:'$400B', growth:'+16% CAGR' },
+    { label:'Online learners worldwide', value:'220M', growth:'+28% YoY' },
+    { label:'Corporate L&D spend 2025', value:'$410B', growth:'+11% YoY' },
+    { label:'AI tutoring market 2030', value:'$30B', growth:'+45% CAGR' },
+  ],
+  'E-commerce': [
+    { label:'Global e-commerce GMV 2025', value:'$7.4T', growth:'+14% YoY' },
+    { label:'D2C brands in India 2025', value:'55,000+', growth:'+38% YoY' },
+    { label:'Return rate (fashion)', value:'30%', growth:'$550B cost/yr' },
+    { label:'Live commerce market 2026', value:'$35B', growth:'+60% CAGR' },
+  ],
+  'Food': [
+    { label:'FoodTech global market 2030', value:'$342B', growth:'+9% CAGR' },
+    { label:'Food waste cost globally', value:'$1T/yr', growth:'40% preventable' },
+    { label:'Cloud kitchen market 2027', value:'$118B', growth:'+22% CAGR' },
+    { label:'AgriTech investment 2024', value:'$8.3B', growth:'+31% vs 2022' },
+  ],
+  'Sustainability': [
+    { label:'CleanTech investment 2024', value:'$303B', growth:'+24% YoY' },
+    { label:'EV charging stations needed', value:'35M by 2030', growth:'Gap: 28M units' },
+    { label:'ESG SaaS market 2030', value:'$62B', growth:'+30% CAGR' },
+    { label:'Carbon credit market 2030', value:'$50B', growth:'+40% CAGR' },
+  ],
+  'Real Estate': [
+    { label:'PropTech global market 2030', value:'$86B', growth:'+16% CAGR' },
+    { label:'India residential market', value:'$180B', growth:'+22% in 2024' },
+    { label:'Fractional ownership users', value:'4.2M', growth:'+58% YoY' },
+    { label:'Smart home market 2030', value:'$330B', growth:'+27% CAGR' },
+  ],
+};
+
+function renderIdeas(ideas, domain) {
+  const grid = document.getElementById('ideas-grid');
+  const output = document.getElementById('ideas-output');
+  const domainSection = document.getElementById('domain-cards-section');
+
+  grid.innerHTML = '';
+
+  // Trend stats banner
+  const trends = DOMAIN_TRENDS[domain] || [];
+  let trendHtml = '';
+  if (trends.length) {
+    trendHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+      ${trends.map(t => `
+        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-sm);">
+          <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--text);line-height:1;">${t.value}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;">${t.label}</div>
+          <div style="font-size:11px;font-weight:600;color:#16a34a;">📈 ${t.growth}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // Update domain badge
+  const domainEmojis = {'Tech & AI':'🤖','Health':'🏥','Finance':'💰','Education':'📚','E-commerce':'🛒','Food':'🍕','Sustainability':'🌱','Real Estate':'🏠'};
+  const emoji = domainEmojis[domain] || '💡';
+  document.getElementById('ideas-domain-badge').innerHTML = `${emoji} ${domain}`;
+  document.getElementById('ideas-domain-name').textContent = domain;
+
+  // Inject trend stats before grid
+  let trendEl = document.getElementById('trend-stats-row');
+  if (!trendEl) {
+    trendEl = document.createElement('div');
+    trendEl.id = 'trend-stats-row';
+    grid.parentNode.insertBefore(trendEl, grid);
+  }
+  trendEl.innerHTML = trendHtml;
+
+  const domainImg = IDEA_IMAGES[domain] || FALLBACK_IMGS[0];
+
+  ideas.slice(0, 4).forEach((idea, i) => {
+    const img = FALLBACK_IMGS[i] || domainImg;
+    const card = document.createElement('div');
+    card.className = 'idea-card';
+    card.innerHTML = `
+      <img src="${img}" class="idea-photo" alt="${idea.name}" loading="lazy">
+      <div class="idea-top">
+        <span class="idea-emoji">${idea.emoji}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          ${idea.tag ? `<span style="font-size:10px;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${idea.tag}</span>` : ''}
+          <span class="idea-score">${idea.score}</span>
+        </div>
+      </div>
+      <div class="idea-name">${idea.name}</div>
+      <div class="idea-problem">${idea.problem}</div>
+      <div style="font-size:12px;color:var(--text-2);font-weight:300;margin-bottom:14px;padding:10px 12px;background:var(--bg-surface);border-radius:var(--radius-sm);border-left:2px solid var(--accent);line-height:1.6;">${idea.solution}</div>
+      <div class="idea-footer">
+        <span class="idea-market">${idea.market}</span>
+        <span class="idea-select">Pick this →</span>
+      </div>`;
+    card.onclick = () => selectIdea(card, idea);
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 100 * i);
+  });
+
+  domainSection.style.display = 'none';
+  output.style.display = 'block';
+  output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  saveSession();
+}
+
+function selectIdea(card, idea) {
+  document.querySelectorAll('.idea-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.selectedIdea = idea;
+  if(!state.completedStages.includes(1)) state.completedStages.push(1);
+
+  // Pre-populate all downstream stages with this idea's data
+  populateAllStages(idea);
+
+  showToast(`"${idea.name}" selected. Moving to Validation →`, 'success');
+  setTimeout(() => goToStage(2), 1200);
+}
+
+// Central function: fills every stage with the selected idea's content
+function populateAllStages(idea) {
+  const name = idea.name;
+  const problem = idea.problem || '';
+  const solution = idea.solution || '';
+  const market = idea.market || '$5B market';
+  const score = parseFloat(idea.score) || 8.5;
+
+  // ── Stage 2: Validation ──
+  document.getElementById('val-subtitle').textContent = `Now validating: ${name}`;
+  document.getElementById('advantage-text').textContent =
+    `${name} targets an underserved niche where incumbents are slow, expensive, or absent. First-mover with AI moat.`;
+
+  // ── Stage 3: Brand ──
+  document.getElementById('brand-name-display').textContent = name;
+  document.getElementById('brand-tagline-display').textContent = buildTagline(idea);
+  document.getElementById('preview-brand-name').textContent = name.toUpperCase();
+  // Seed name cards
+  const nameOpts = document.getElementById('name-options');
+  const variants = generateNameVariants(name);
+  nameOpts.innerHTML = variants.map((v,i) => `
+    <div class="name-card ${i===0?'active':''}" onclick="selectName(this,'${v.name}')">
+      <div class="name-card-text">${v.name}</div>
+      <div class="name-card-tld">${v.tld}</div>
+    </div>`).join('');
+  state.brandName = variants[0].name;
+
+  // ── Stage 4: Copy ──
+  document.getElementById('copy-hero').textContent =
+    `${solution}. Built for the people who can't afford to waste time.`;
+  document.getElementById('copy-features').textContent =
+    `✦ ${solution.split('.')[0]} — works from day one.\n✦ Zero setup, zero learning curve. Plug in and go.\n✦ AI that adapts to your workflow, not the other way around.\n✦ Save 3+ hours daily. We've timed it.`;
+  document.getElementById('copy-proof').textContent =
+    `"${name} changed how our team works. ${problem.replace(/\.$/, '')} — that problem is gone." — Early Beta User`;
+  document.getElementById('copy-pricing').textContent =
+    `Starter: Free · 14-day trial, core features\nGrowth: ₹999/mo · Unlimited use, AI suite, priority support\nTeam: ₹2,999/mo · Multi-seat, analytics, white-label`;
+  document.getElementById('copy-cta').textContent =
+    `Stop dealing with ${problem.split(' ').slice(0,4).join(' ').toLowerCase()}...\nStart with ${name} — free for 14 days.\n→ No card needed. Works in 60 seconds.`;
+  document.getElementById('preview-headline').textContent = solution.split('.')[0];
+  document.getElementById('preview-proof').textContent = `"${name} solved a problem I didn't even know how to explain."`;
+  document.getElementById('preview-subhead').textContent = problem;
+
+  // ── Stage 5: Marketing ──
+  // (charts init on arrival, but update KPI labels)
+  document.querySelector('#stage-5 .stage-desc').textContent =
+    `Go-to-market strategy for ${name}. Budget allocation and 90-day execution calendar.`;
+
+  // ── Stage 6: Launch ──
+  document.getElementById('pitch-problem').textContent = problem;
+  document.getElementById('pitch-solution').textContent = solution;
+  document.getElementById('pitch-market').textContent = `${market} · 28%+ YoY growth`;
+  document.getElementById('pitch-model').textContent = `SaaS · ₹999–₹2,999/month · Free tier for acquisition`;
+  document.getElementById('pitch-competition').textContent =
+    `Fragmented legacy tools · No AI-native competitor in this exact niche · You have 12-month first-mover window`;
+  document.getElementById('pitch-traction').textContent =
+    `Product Hunt launch → Niche community seeding → Content SEO → Referral loop`;
+  document.getElementById('pitch-ask').textContent =
+    `₹50L seed · 18-month runway · Build product + acquire first 1,000 paying users`;
+}
+
+function buildTagline(idea) {
+  const hooks = [
+    `The ${(idea.solution||'').split(' ').slice(0,3).join(' ').toLowerCase()} you always needed.`,
+    `${idea.name} — done. Finally.`,
+    `${(idea.problem||'').split(' ').slice(0,4).join(' ')} No more.`,
+    `Smarter. Faster. ${idea.name}.`,
+  ];
+  return hooks[Math.floor(Math.random() * hooks.length)];
+}
+
+function generateNameVariants(name) {
+  const suffixes = ['AI','HQ','Go','Labs','OS','Hub'];
+  const prefixes = ['Snap','Flow','Clear','Bright','Smart'];
+  const rand = (a) => a[Math.floor(Math.random()*a.length)];
+  return [
+    { name: name, tld: '.io · .ai · .co' },
+    { name: name + rand(suffixes), tld: '.ai · .app' },
+    { name: rand(prefixes) + name, tld: '.co · .io' },
+  ];
+}
+
+/* ═══════════════════════════════════════
+   10. STAGE 2 — VALIDATION CHARTS
+═══════════════════════════════════════ */
+let tamChart, radarChart;
+function initValidationCharts() {
+  if(tamChart) tamChart.destroy();
+  if(radarChart) radarChart.destroy();
+
+  const idea = state.selectedIdea;
+
+  // Parse market number from idea.market string like "$8.9B market"
+  const mStr = idea ? (idea.market || '$5B market') : '$5B market';
+  const mMatch = mStr.match(/\$([\d.]+)([BM])/i);
+  let tamNum = mMatch ? parseFloat(mMatch[1]) : 5;
+  const mUnit = mMatch ? mMatch[2].toUpperCase() : 'B';
+  const samNum = +(tamNum * 0.14).toFixed(1);
+  const somNum = +(tamNum * 0.01).toFixed(2);
+  const scoreNum = idea ? (parseFloat(idea.score) || 8.4) : 8.4;
+
+  document.getElementById('tam-val').textContent = `$${tamNum}${mUnit}`;
+  document.getElementById('sam-val').textContent = `$${samNum}${mUnit}`;
+  document.getElementById('som-val').textContent = `$${somNum}${mUnit}`;
+
+  // TAM Doughnut
+  const tc = document.getElementById('tam-chart').getContext('2d');
+  tamChart = new Chart(tc, {
+    type: 'doughnut',
+    data: {
+      labels: ['TAM', 'SAM', 'SOM'],
+      datasets: [{
+        data: [70, 20, 10],
+        backgroundColor: ['#FF6B35','#E8A838','#2D9CDB'],
+        borderWidth: 0, hoverBorderWidth: 0
+      }]
+    },
+    options: {
+      cutout: '65%',
+      plugins: { legend: { display: false } },
+      animation: { duration: 1000 }
+    }
+  });
+
+  // Radar — vary competitor scores slightly based on idea score
+  const yourScore = Math.min(scoreNum, 10);
+  const rc = document.getElementById('radar-chart').getContext('2d');
+  radarChart = new Chart(rc, {
+    type: 'radar',
+    data: {
+      labels: ['Market Share','Product','Price','Brand','Innovation'],
+      datasets: [
+        { label:'Incumbent A', data:[7,6,5,8,4], borderColor:'rgba(0,0,0,0.15)', backgroundColor:'rgba(0,0,0,0.03)', pointRadius:2 },
+        { label:'Incumbent B', data:[5,5,8,5,5], borderColor:'rgba(0,0,0,0.1)', backgroundColor:'rgba(0,0,0,0.02)', pointRadius:2 },
+        { label: idea ? idea.name : 'You', data:[2, Math.round(yourScore), 7, 5, Math.round(yourScore)], borderColor:'#FF6B35', backgroundColor:'rgba(255,107,53,0.1)', borderWidth:2, pointRadius:4, pointBackgroundColor:'#FF6B35' }
+      ]
+    },
+    options: {
+      scales: { r: { grid: { color:'rgba(0,0,0,0.06)' }, pointLabels: { font:{size:10}, color:'#78716C' }, ticks:{display:false}, min:0, max:10 }},
+      plugins: { legend:{display:false} },
+      animation: { duration: 1000 }
+    }
+  });
+
+  // Animate opportunity score
+  animateNumber(document.getElementById('opp-score'), 0, scoreNum, 1200, 1);
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('#stage-2 .score-bar-fill').forEach(bar => {
+      bar.style.width = bar.getAttribute('data-width') + '%';
+    });
+  }, 400);
+}
+
+/* ═══════════════════════════════════════
+   11. STAGE 3 — BRAND
+═══════════════════════════════════════ */
+function selectName(el, name) {
+  document.querySelectorAll('.name-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.brandName = name;
+  document.getElementById('brand-name-display').textContent = name;
+  document.getElementById('preview-brand-name').textContent = name.toUpperCase();
+}
+
+async function generateBrand() {
+  const idea = state.selectedIdea;
+  if(!idea) { showToast('Please select an idea first.', 'error'); return; }
+  showJarvis();
+  const prompt = `Generate 3 startup brand names for: "${idea.name}" — ${idea.problem}
+Return ONLY this JSON:
+{"names":[{"name":"BrandName","tld":".io · .ai"},{"name":"BrandName2","tld":".co · .app"},{"name":"BrandName3","tld":".ai · .io"}],"tagline":"compelling 6-word tagline","persona":{"name":"Full Name","age":27,"role":"Occupation · City","pain":"pain point","goal":"their goal"}}`;
+  const raw = await askJarvis(prompt, 600);
+  hideJarvis();
+  if(!raw) return;
+  try {
+    let clean = raw.replace(/```json|```/g,'').trim();
+    const data = JSON.parse(clean);
+    const opts = document.getElementById('name-options');
+    opts.innerHTML = data.names.map((n,i) => `
+      <div class="name-card ${i===0?'active':''}" onclick="selectName(this,'${n.name}')">
+        <div class="name-card-text">${n.name}</div>
+        <div class="name-card-tld">${n.tld}</div>
+      </div>`).join('');
+    if(data.names[0]) selectName(opts.firstElementChild, data.names[0].name);
+    if(data.tagline) document.getElementById('brand-tagline-display').textContent = data.tagline;
+    if(data.persona) {
+      document.getElementById('persona-name').textContent = data.persona.name;
+      document.getElementById('persona-role').textContent = `${data.persona.age} · ${data.persona.role}`;
+      document.getElementById('persona-pain').textContent = data.persona.pain;
+      document.getElementById('persona-goal').textContent = data.persona.goal;
+      document.getElementById('persona-avatar').textContent = data.persona.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    }
+    showToast('Brand identity generated!', 'success');
+  } catch(e) { showToast('Generated! Check options above.', 'success'); }
+}
+
+/* ═══════════════════════════════════════
+   12. STAGE 4 — COPY ENGINE
+═══════════════════════════════════════ */
+function toggleAcc(head) {
+  const item = head.closest('.acc-item');
+  item.classList.toggle('open');
+}
+
+function copyText(btn) {
+  const text = btn.closest('.copy-box').querySelector('div:last-child').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+async function generateCopy() {
+  const idea = state.selectedIdea || { name: state.brandName, problem:'Founders need faster tools', solution:'AI-powered startup OS' };
+  showJarvis();
+  const prompt = `Write website copy for "${state.brandName}" — ${idea.problem || ''}. Solution: ${idea.solution || ''}
+Return ONLY this JSON:
+{"hero":"2 sentence hero tagline","features":"4 bullet features with ✦ prefix, one per line","proof":"1 powerful testimonial quote with attribution","pricing":"3 pricing tiers with price and 3 features each","cta":"3 line call to action with urgency"}`;
+  const raw = await askJarvis(prompt, 900);
+  hideJarvis();
+  if(!raw) return;
+  try {
+    let clean = raw.replace(/```json|```/g,'').trim();
+    const data = JSON.parse(clean);
+    if(data.hero) { document.getElementById('copy-hero').textContent = data.hero; document.getElementById('preview-headline').textContent = data.hero.split('.')[0]; }
+    if(data.features) document.getElementById('copy-features').textContent = data.features;
+    if(data.proof) { document.getElementById('copy-proof').textContent = data.proof; document.getElementById('preview-proof').textContent = data.proof.split(' — ')[0]; }
+    if(data.pricing) document.getElementById('copy-pricing').textContent = data.pricing;
+    if(data.cta) document.getElementById('copy-cta').textContent = data.cta;
+    showToast('Copy generated by JARVIS!', 'success');
+  } catch(e) { showToast('Copy ready — check accordions above.', 'success'); }
+}
+
+function exportCopy() {
+  const sections = ['copy-hero','copy-features','copy-proof','copy-pricing','copy-cta'];
+  const labels = ['HERO','FEATURES','SOCIAL PROOF','PRICING','CTA'];
+  const text = sections.map((id,i) => `=== ${labels[i]} ===\n${document.getElementById(id).textContent}`).join('\n\n');
+  const blob = new Blob([text], { type:'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${state.brandName}-copy.txt`;
+  a.click();
+}
+
+/* ═══════════════════════════════════════
+   13. STAGE 5 — MARKETING CHARTS
+═══════════════════════════════════════ */
+let budgetChart, growthChart;
+function initMarketingCharts() {
+  if(budgetChart) budgetChart.destroy();
+  if(growthChart) growthChart.destroy();
+
+  // Budget donut
+  const bc = document.getElementById('budget-chart').getContext('2d');
+  budgetChart = new Chart(bc, {
+    type: 'doughnut',
+    data: {
+      labels: ['Content','Paid Ads','Community','Influencers'],
+      datasets: [{ data:[40,30,20,10], backgroundColor:['#FF6B35','#E8A838','#2D9CDB','#78716C'], borderWidth:0 }]
+    },
+    options: { cutout:'65%', plugins:{ legend:{ display:false } }, animation:{duration:800} }
+  });
+
+  // Growth line chart
+  const gc = document.getElementById('growth-chart').getContext('2d');
+  const weeks = Array.from({length:12},(_,i)=>`W${i+1}`);
+  growthChart = new Chart(gc, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        { label:'Aggressive', data:[50,120,240,420,680,1000,1500,2100,2800,3600,4500,5800], borderColor:'#FF6B35', backgroundColor:'rgba(255,107,53,0.06)', tension:0.4, borderWidth:2, pointRadius:0 },
+        { label:'Base', data:[30,70,140,240,380,560,800,1100,1500,2000,2600,3300], borderColor:'#E8A838', backgroundColor:'rgba(232,168,56,0.04)', tension:0.4, borderWidth:2, pointRadius:0 },
+        { label:'Conservative', data:[20,45,90,155,240,350,490,670,900,1200,1550,1950], borderColor:'#2D9CDB', backgroundColor:'rgba(45,156,219,0.04)', tension:0.4, borderWidth:2, pointRadius:0 }
+      ]
+    },
+    options: {
+      scales: { x:{ grid:{display:false}, ticks:{font:{size:10},color:'#A8A29E'} }, y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10},color:'#A8A29E'} } },
+      plugins: { legend:{ labels:{font:{size:10},color:'#78716C',boxWidth:12} } },
+      animation:{ duration:1200 },
+      interaction:{ mode:'index', intersect:false }
+    }
+  });
+
+  // Build calendar
+  buildCalendar();
+  animateChannelBars();
+}
+
+function buildCalendar() {
+  const cal = document.getElementById('mini-calendar');
+  cal.innerHTML = '';
+  const colors = ['#FF6B35','#E8A838','#2D9CDB','#22c55e','transparent','transparent','transparent'];
+  for(let i = 0; i < 91; i++) {
+    const day = document.createElement('div');
+    const colorIdx = Math.floor(Math.random() * colors.length);
+    const c = colors[colorIdx];
+    day.style.cssText = `width:100%;aspect-ratio:1;border-radius:2px;background:${c === 'transparent' ? 'var(--bg-surface)' : c};opacity:${c === 'transparent' ? '1' : '0.7'};cursor:pointer;transition:transform 150ms ease;`;
+    if(c !== 'transparent') day.title = ['Content post','Paid campaign','Community event','Product launch'][colorIdx] || '';
+    day.onmouseover = () => { if(c !== 'transparent') day.style.transform = 'scale(1.3)'; };
+    day.onmouseout = () => { day.style.transform = 'scale(1)'; };
+    cal.appendChild(day);
+  }
+}
+
+function updateBudget() {
+  const sliders = document.querySelectorAll('.budget-slider');
+  const ids = ['s1-pct','s2-pct','s3-pct','s4-pct'];
+  const vals = Array.from(sliders).map(s => parseInt(s.value));
+  const total = vals.reduce((a,b) => a+b, 0);
+  ids.forEach((id,i) => { document.getElementById(id).textContent = Math.round((vals[i]/total)*100) + '%'; });
+  if(budgetChart) {
+    budgetChart.data.datasets[0].data = vals.map(v => Math.round((v/total)*100));
+    budgetChart.update();
+  }
+}
+
+/* ═══════════════════════════════════════
+   14. STAGE 6 — LAUNCH
+═══════════════════════════════════════ */
+function initLaunchStage() {
+  updateChecklist();
+  setTimeout(() => {
+    const done = document.querySelectorAll('.check-item.done').length;
+    const total = document.querySelectorAll('.check-item').length;
+    const pct = Math.round((done/total)*100);
+    const ring = document.getElementById('readiness-ring');
+    const circumf = 402;
+    ring.style.strokeDashoffset = circumf - (circumf * pct / 100);
+    animateNumber(document.getElementById('readiness-score-text'), 0, pct, 1500, 0, '%');
+  }, 400);
+}
+
+function toggleCheck(item) {
+  item.classList.toggle('done');
+  updateChecklist();
+}
+
+function updateChecklist() {
+  const items = document.querySelectorAll('.check-item');
+  const done = document.querySelectorAll('.check-item.done').length;
+  document.getElementById('check-count').textContent = `${done} of ${items.length} complete`;
+  document.getElementById('check-fill').style.width = (done/items.length*100) + '%';
+  // Update ring
+  const pct = Math.round((done/items.length)*100);
+  const ring = document.getElementById('readiness-ring');
+  if(ring) ring.style.strokeDashoffset = 402 - (402 * pct / 100);
+  const scoreEl = document.getElementById('readiness-score-text');
+  if(scoreEl) scoreEl.textContent = pct + '%';
+}
+
+function shareResults() {
+  navigator.clipboard.writeText(window.location.href).then(() => showToast('Link copied to clipboard!', 'success'));
+}
+
+/* ═══════════════════════════════════════
+   16. TOAST NOTIFICATIONS
+═══════════════════════════════════════ */
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'error' ? 'toast-error' : type === 'success' ? 'toast-success' : ''}`;
+  toast.innerHTML = `${msg}<div class="toast-progress"></div>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, 3000);
+}
+
+/* ═══════════════════════════════════════
+   17. SESSION PERSISTENCE
+═══════════════════════════════════════ */
+function saveSession() {
+  const session = {
+    version: 1,
+    timestamp: new Date().toISOString(),
+    currentStage: state.currentStage,
+    completedStages: state.completedStages,
+    selectedDomain: state.selectedDomain,
+    selectedIdea: state.selectedIdea,
+    brandName: state.brandName
+  };
+  localStorage.setItem('launchpad_v1_session', JSON.stringify(session));
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem('launchpad_v1_session');
+    if(!raw) return;
+    const session = JSON.parse(raw);
+    if(!session.selectedIdea) return;
+    state.selectedIdea = session.selectedIdea;
+    state.brandName = session.brandName || 'NovaSpark';
+    state.completedStages = session.completedStages || [];
+    state.selectedDomain = session.selectedDomain;
+    const banner = document.getElementById('resume-banner');
+    const nameEl = document.getElementById('resume-idea-name');
+    if(nameEl) nameEl.textContent = session.selectedIdea.name || 'Your Startup';
+    banner.classList.add('show');
+  } catch(e) {}
+}
+
+function resumeSession() {
+  document.getElementById('resume-banner').classList.remove('show');
+  showToast('Session resumed!', 'success');
+}
+
+function startFresh() {
+  localStorage.removeItem('launchpad_v1_session');
+  document.getElementById('resume-banner').classList.remove('show');
+  state.selectedIdea = null; state.completedStages = [];
+  goToStage(1);
+  showToast('Starting fresh. Let\'s go!', 'success');
+}
+
+/* ═══════════════════════════════════════
+   18. SCROLL ANIMATIONS & COUNTERS
+═══════════════════════════════════════ */
+function animateScrollReveals() {
+  const els = document.querySelectorAll('.scroll-reveal:not(.revealed)');
+  els.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if(rect.top < window.innerHeight * 0.9) el.classList.add('revealed');
+  });
+}
+
+function animateCounters() {
+  document.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if(rect.top < window.innerHeight) {
+      el.classList.add('counted');
+      const target = parseFloat(el.getAttribute('data-count'));
+      const prefix = el.getAttribute('data-prefix') || '';
+      const suffix = el.getAttribute('data-suffix') || '';
+      const isFloat = target % 1 !== 0;
+      animateNumber(el, 0, target, 1000, isFloat ? 1 : 0, suffix, prefix);
+    }
+  });
+}
+
+function animateNumber(el, from, to, duration, decimals = 0, suffix = '', prefix = '') {
+  const start = performance.now();
+  function step(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const val = from + (to - from) * ease;
+    el.textContent = prefix + val.toFixed(decimals) + suffix;
+    if(progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function animateChannelBars() {
+  document.querySelectorAll('.channel-bar-fill:not(.animated)').forEach(bar => {
+    const w = bar.getAttribute('data-width');
+    if(w) { bar.classList.add('animated'); setTimeout(() => { bar.style.width = w + '%'; }, 200); }
+  });
+}
+
+window.addEventListener('scroll', () => {
+  animateScrollReveals();
+  animateCounters();
+  animateChannelBars();
+});
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  loadSession();
+  animateScrollReveals();
+  updateChecklist();
+});
+</script>
+</body>
+</html>
